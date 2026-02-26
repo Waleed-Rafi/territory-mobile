@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Platform,
 } from "react-native";
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
@@ -13,6 +12,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useAlert } from "../contexts/AlertContext";
 import { supabase } from "../supabase/client";
 import { useRunTracking } from "../hooks/useRunTracking";
+import { Loader } from "../components/Loaders";
 import { cancelRunReminderFollowUp } from "../utils/runReminders";
 import {
   calculateTotalDistance,
@@ -286,7 +286,7 @@ export default function RunScreen(): React.ReactElement {
           activeOpacity={0.9}
         >
           {saving ? (
-            <ActivityIndicator color={colors.primaryForeground} />
+            <Loader type="spinner" color={colors.primaryForeground} />
           ) : tracking ? (
             <Square size={28} color="#fff" fill="#fff" />
           ) : (

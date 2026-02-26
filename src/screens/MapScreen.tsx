@@ -7,6 +7,7 @@ import * as Location from "expo-location";
 import { MapPin } from "lucide-react-native";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../supabase/client";
+import { Loader } from "../components/Loaders";
 import { colors, radius, spacing, typography } from "../theme";
 import type { TerritoryMapItem } from "../types/domain";
 import type { MapScreenNavigationProp } from "../types/navigation";
@@ -193,7 +194,8 @@ export default function MapScreen(): React.ReactElement {
 
   if (!userLocation) {
     return (
-      <View style={[styles.container, styles.centered]}>
+      <View style={[styles.container, styles.centered, styles.loadingColumn]}>
+        <Loader type="dots" color={colors.primary} />
         <Text style={styles.loadingText}>Loading map…</Text>
       </View>
     );
@@ -305,6 +307,7 @@ const darkMapStyle = [
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   centered: { justifyContent: "center", alignItems: "center" },
+  loadingColumn: { gap: spacing.md },
   loadingText: { color: colors.mutedForeground, fontSize: 14 },
   header: {
     position: "absolute",

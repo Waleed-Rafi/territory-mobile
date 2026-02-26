@@ -1,11 +1,12 @@
 import React from "react";
-import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "../contexts/AuthContext";
 import AuthScreen from "../screens/AuthScreen";
 import TabNavigator from "./TabNavigator";
 import RunReminderScreen from "../screens/RunReminderScreen";
 import NameYourRunScreen from "../screens/NameYourRunScreen";
+import { Loader } from "../components/Loaders";
 import { colors, typography } from "../theme";
 import type { RootStackParamList } from "../types/navigation";
 
@@ -17,7 +18,7 @@ export default function RootNavigator(): React.ReactElement {
   if (loading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <Loader type="spinnerLarge" color={colors.primary} />
         <Text style={styles.loadingText}>LOADING</Text>
       </View>
     );

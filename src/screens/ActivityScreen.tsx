@@ -4,6 +4,7 @@ import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
 import { BlurView } from "expo-blur";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../supabase/client";
+import { Loader } from "../components/Loaders";
 import { colors, radius, spacing, typography } from "../theme";
 import type { ActivityDisplay, RunSummary } from "../types/domain";
 import { getActivityIcon, getActivityColor } from "../constants/activity";
@@ -147,6 +148,7 @@ export default function ActivityScreen(): React.ReactElement {
       <Text style={styles.header}>ACTIVITY</Text>
       {loading ? (
         <View style={styles.placeholder}>
+          <Loader type="skeleton" style={styles.skeletonWrap} />
           <Text style={styles.placeholderText}>Loading…</Text>
         </View>
       ) : activities.length === 0 ? (
@@ -197,7 +199,8 @@ const styles = StyleSheet.create({
   mapWrap: { height: 100, borderRadius: radius.sm, overflow: "hidden", marginTop: spacing.sm, backgroundColor: colors.secondary },
   miniMap: { flex: 1, width: "100%", height: "100%" },
   cardTime: { fontSize: 10, color: colors.mutedForeground, marginLeft: spacing.sm },
-  placeholder: { padding: spacing["2xl"] },
+  placeholder: { padding: spacing["2xl"], alignItems: "center" },
+  skeletonWrap: { marginBottom: spacing.lg, width: "100%", maxWidth: 280 },
   placeholderText: { color: colors.mutedForeground },
   empty: {
     overflow: "hidden",

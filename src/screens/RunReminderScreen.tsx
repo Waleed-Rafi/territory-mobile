@@ -18,6 +18,7 @@ import {
   scheduleRunReminders,
   cancelRunReminders,
 } from "../utils/runReminders";
+import { Loader } from "../components/Loaders";
 import { colors, radius, spacing, typography } from "../theme";
 import { DAY_LABELS, type RunSchedule } from "../types/runSchedule";
 
@@ -100,7 +101,8 @@ export default function RunReminderScreen(): React.ReactElement {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Run reminders</Text>
         </View>
-        <View style={styles.centered}>
+        <View style={[styles.centered, styles.loadingRow]}>
+          <Loader type="dots" color={colors.primary} />
           <Text style={styles.loadingText}>Loading…</Text>
         </View>
       </View>
@@ -185,7 +187,14 @@ export default function RunReminderScreen(): React.ReactElement {
           style={[styles.saveButton, saving && styles.saveButtonDisabled]}
           activeOpacity={0.9}
         >
-          <Text style={styles.saveButtonText}>{saving ? "Saving…" : "Save reminders"}</Text>
+          {saving ? (
+            <View style={styles.saveButtonContent}>
+              <Text style={styles.saveButtonText}>Saving</Text>
+              <Loader type="dots" color={colors.primaryForeground} style={styles.saveButtonDots} />
+            </View>
+          ) : (
+            <Text style={styles.saveButtonText}>Save reminders</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -212,6 +221,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  loadingRow: { flexDirection: "row", gap: spacing.sm, alignItems: "center" },
   loadingText: { fontSize: 14, color: colors.mutedForeground },
   scroll: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: 80 },
@@ -282,6 +292,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   saveButtonDisabled: { opacity: 0.6 },
+  saveButtonContent: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  saveButtonDots: { marginLeft: 0 },
   saveButtonText: {
     fontFamily: typography.display,
     fontSize: 14,

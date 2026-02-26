@@ -8,8 +8,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ActivityIndicator,
 } from "react-native";
+import { Loader } from "../components/Loaders";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import * as WebBrowser from "expo-web-browser";
@@ -162,7 +162,7 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps): React.Re
           activeOpacity={0.9}
         >
           {loading ? (
-            <ActivityIndicator color={colors.primaryForeground} />
+            <Loader type="spinner" color={colors.primaryForeground} />
           ) : (
             <Text style={styles.primaryButtonText}>
               {isLogin ? "SIGN IN" : "CREATE ACCOUNT"}

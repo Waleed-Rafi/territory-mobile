@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
   Image,
   Platform,
 } from "react-native";
@@ -18,6 +17,7 @@ import { Camera, X } from "lucide-react-native";
 import { useAuth } from "../contexts/AuthContext";
 import { useAlert } from "../contexts/AlertContext";
 import { supabase } from "../supabase/client";
+import { Loader } from "../components/Loaders";
 import { colors, radius, spacing, typography } from "../theme";
 import type { RootStackParamList } from "../types/navigation";
 import type { ActivityInsert } from "../types/database";
@@ -228,7 +228,7 @@ export default function NameYourRunScreen(): React.ReactElement {
           disabled={saving}
         >
           {saving ? (
-            <ActivityIndicator color={colors.primaryForeground} />
+            <Loader type="spinner" color={colors.primaryForeground} />
           ) : (
             <Text style={styles.saveBtnText}>Save run</Text>
           )}
