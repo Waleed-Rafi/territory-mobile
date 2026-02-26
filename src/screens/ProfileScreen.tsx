@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
-import { Shield, Flame, MapPin, TrendingUp, LogOut } from "lucide-react-native";
+import { Shield, Flame, MapPin, TrendingUp, LogOut, Bell, ChevronRight } from "lucide-react-native";
 import { BlurView } from "expo-blur";
+import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../supabase/client";
 import { formatDistance, formatDuration } from "../lib/gps";
@@ -10,9 +11,14 @@ import type { ProfileDisplay, RunDisplay } from "../types/domain";
 import { formatRunDate } from "../utils/format";
 
 export default function ProfileScreen(): React.ReactElement {
+  const navigation = useNavigation();
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<ProfileDisplay | null>(null);
   const [runs, setRuns] = useState<RunDisplay[]>([]);
+
+  const openRunReminders = () => {
+    (navigation.getParent() as { navigate: (name: string) => void } | undefined)?.navigate("RunReminder");
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -79,6 +85,17 @@ export default function ProfileScreen(): React.ReactElement {
           </BlurView>
         ))}
       </View>
+
+      <TouchableOpacity onPress={openRunReminders} style={styles.remindersRow} activeOpacity={0.8}>
+        <BlurView intensity={70} tint="dark" style={styles.remindersCard}>
+          <Bell size={18} stroke={colors.primary} style={styles.remindersIcon} />
+          <View style={styles.remindersTextWrap}>
+            <Text style={styles.remindersTitle}>Run reminders</Text>
+            <Text style={styles.remindersSub}>Set days & time to build a habit</Text>
+          </View>
+          <ChevronRight size={20} stroke={colors.mutedForeground} />
+        </BlurView>
+      </TouchableOpacity>
 
       <Text style={styles.sectionTitle}>RECENT RUNS</Text>
       {runs.length === 0 ? (
@@ -166,6 +183,20 @@ const styles = StyleSheet.create({
   statIcon: { marginBottom: 8 },
   statValue: { fontFamily: typography.mono, fontSize: 22, fontWeight: "700", color: colors.foreground },
   statLabel: { fontSize: 10, color: colors.mutedForeground, marginTop: 4, letterSpacing: 1 },
+  remindersRow: { marginBottom: spacing.xl },
+  remindersCard: {
+    overflow: "hidden",
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+  },
+  remindersIcon: { marginRight: spacing.md },
+  remindersTextWrap: { flex: 1 },
+  remindersTitle: { fontSize: 15, fontWeight: "600", color: colors.foreground },
+  remindersSub: { fontSize: 12, color: colors.mutedForeground, marginTop: 2 },
   sectionTitle: {
     fontFamily: typography.display,
     fontSize: 14,

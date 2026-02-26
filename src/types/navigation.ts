@@ -6,9 +6,11 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { CompositeScreenProps } from "@react-navigation/native";
 
-/** Root stack: Auth (unauthenticated) */
+/** Root stack: Auth when unauthenticated; Main + RunReminder when authenticated */
 export type RootStackParamList = {
   Auth: undefined;
+  Main: undefined;
+  RunReminder: undefined;
 };
 
 /** Main tab screens (authenticated) */

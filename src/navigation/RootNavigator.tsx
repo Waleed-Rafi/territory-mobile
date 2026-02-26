@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "../contexts/AuthContext";
 import AuthScreen from "../screens/AuthScreen";
 import TabNavigator from "./TabNavigator";
+import RunReminderScreen from "../screens/RunReminderScreen";
 import { colors, typography } from "../theme";
 import type { RootStackParamList } from "../types/navigation";
 
@@ -31,7 +32,12 @@ export default function RootNavigator(): React.ReactElement {
     );
   }
 
-  return <TabNavigator />;
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Main" component={TabNavigator} />
+      <Stack.Screen name="RunReminder" component={RunReminderScreen} />
+    </Stack.Navigator>
+  );
 }
 
 const styles = StyleSheet.create({

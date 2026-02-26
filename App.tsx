@@ -16,9 +16,11 @@ import {
 } from "@expo-google-fonts/jetbrains-mono";
 import { AuthProvider } from "./src/contexts/AuthContext";
 import RootNavigator from "./src/navigation/RootNavigator";
+import { setRunReminderNotificationHandler } from "./src/utils/runReminders";
 import { colors } from "./src/theme";
 
 SplashScreen.preventAutoHideAsync();
+setRunReminderNotificationHandler();
 
 export default function App() {
   const [fontsLoaded] = useFonts({
