@@ -76,6 +76,7 @@ export interface ProfileRow {
   territories_owned: number;
   territories_defended: number;
   level: number;
+  status?: "active" | "inactive";
   created_at: string;
   updated_at: string;
   avatar_url: string | null;
@@ -92,6 +93,7 @@ export interface ProfileInsert {
   territories_owned?: number;
   territories_defended?: number;
   level?: number;
+  status?: "active" | "inactive";
   avatar_url?: string | null;
   bio?: string | null;
 }

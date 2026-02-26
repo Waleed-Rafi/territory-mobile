@@ -24,17 +24,28 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const applySession = async (session: Session | null) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("status")
+          .eq("user_id", session.user.id)
+          .single();
+        if (profile?.status === "inactive") {
+          await supabase.from("profiles").update({ status: "active" }).eq("user_id", session.user.id);
+        }
+      }
+      setLoading(false);
+    };
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+        void applySession(session ?? null);
       }
     );
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+      void applySession(session ?? null);
     });
     return () => subscription.unsubscribe();
   }, []);

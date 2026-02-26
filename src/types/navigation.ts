@@ -15,12 +15,14 @@ export type NameYourRunParams = {
   suggestedDescription: string;
 };
 
-/** Root stack: Auth when unauthenticated; Main + RunReminder + NameYourRun when authenticated */
+/** Root stack: Auth when unauthenticated; Main + RunReminder + NameYourRun + Terms + About when authenticated */
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
   RunReminder: undefined;
   NameYourRun: NameYourRunParams;
+  Terms: undefined;
+  About: undefined;
 };
 
 /** Main tab screens (authenticated) */

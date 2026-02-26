@@ -10,15 +10,14 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { Shield, Flame, MapPin, TrendingUp, LogOut, Bell, ChevronRight, Trophy, Target, Calendar } from "lucide-react-native";
+import { Shield, Flame, MapPin, TrendingUp, LogOut, Bell, ChevronRight, Trophy, Target, Calendar, FileText, Info } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../supabase/client";
-import { formatDistance, formatDuration } from "../lib/gps";
+import { formatDistance } from "../lib/gps";
 import { colors, radius, spacing, typography } from "../theme";
-import type { ProfileDisplay, RunDisplay } from "../types/domain";
-import { formatRunDate } from "../utils/format";
+import type { ProfileDisplay } from "../types/domain";
 import { getWeeklyGoalKm, setWeeklyGoalKm } from "../utils/weeklyGoalStorage";
 import {
   getRunDates,
@@ -35,7 +34,6 @@ export default function ProfileScreen(): React.ReactElement {
   const navigation = useNavigation();
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<ProfileDisplay | null>(null);
-  const [runs, setRuns] = useState<RunDisplay[]>([]);
   const [runsForStats, setRunsForStats] = useState<{ started_at: string; distance: number }[]>([]);
   const [weeklyGoalKm, setWeeklyGoalKmState] = useState(0);
   const [goalModalVisible, setGoalModalVisible] = useState(false);
@@ -55,17 +53,6 @@ export default function ProfileScreen(): React.ReactElement {
     if (data) setProfile(data as ProfileDisplay);
   }, [user]);
 
-  const loadRuns = useCallback(async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("runs")
-      .select("id, distance, duration, territory_claimed, started_at")
-      .eq("user_id", user.id)
-      .order("started_at", { ascending: false })
-      .limit(10);
-    if (data) setRuns(data as RunDisplay[]);
-  }, [user]);
-
   const loadRunsForStats = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase
@@ -79,14 +66,15 @@ export default function ProfileScreen(): React.ReactElement {
   useEffect(() => {
     if (!user) return;
     loadProfile();
-    loadRuns();
     loadRunsForStats();
     getWeeklyGoalKm().then(setWeeklyGoalKmState);
-  }, [user, loadProfile, loadRuns, loadRunsForStats]);
+  }, [user, loadProfile, loadRunsForStats]);
 
   const handleSignOut = async () => {
     await signOut();
   };
+
+  const rootNav = navigation.getParent() as { navigate: (name: string) => void } | undefined;
 
   const runDates = getRunDates(runsForStats.map((r) => r.started_at));
   const currentStreak = getCurrentStreak(runDates);
@@ -255,31 +243,27 @@ export default function ProfileScreen(): React.ReactElement {
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>RECENT RUNS</Text>
-      {runs.length === 0 ? (
-        <BlurView intensity={70} tint="dark" style={styles.emptyRuns}>
-          <Text style={styles.emptyRunsText}>No runs yet. Get out there!</Text>
+      <TouchableOpacity onPress={() => rootNav?.navigate("Terms")} style={styles.remindersRow} activeOpacity={0.8}>
+        <BlurView intensity={70} tint="dark" style={styles.remindersCard}>
+          <FileText size={18} stroke={colors.primary} style={styles.remindersIcon} />
+          <View style={styles.remindersTextWrap}>
+            <Text style={styles.remindersTitle}>Terms and Conditions</Text>
+            <Text style={styles.remindersSub}>Read our terms of use</Text>
+          </View>
+          <ChevronRight size={20} stroke={colors.mutedForeground} />
         </BlurView>
-      ) : (
-        <View style={styles.runsList}>
-          {runs.map((run) => (
-            <BlurView key={run.id} intensity={70} tint="dark" style={styles.runCard}>
-              <View style={styles.runCardLeft}>
-                <Text style={styles.runDate}>{formatRunDate(run.started_at)}</Text>
-                <Text style={styles.runMeta}>
-                  {formatDistance(run.distance)} · {formatDuration(run.duration)}
-                </Text>
-              </View>
-              {run.territory_claimed && (
-                <View style={styles.claimedBadge}>
-                  <MapPin size={10} stroke={colors.primary} />
-                  <Text style={styles.claimedText}>CLAIMED</Text>
-                </View>
-              )}
-            </BlurView>
-          ))}
-        </View>
-      )}
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => rootNav?.navigate("About")} style={styles.remindersRow} activeOpacity={0.8}>
+        <BlurView intensity={70} tint="dark" style={styles.remindersCard}>
+          <Info size={18} stroke={colors.primary} style={styles.remindersIcon} />
+          <View style={styles.remindersTextWrap}>
+            <Text style={styles.remindersTitle}>About & Privacy</Text>
+            <Text style={styles.remindersSub}>App info and privacy policy</Text>
+          </View>
+          <ChevronRight size={20} stroke={colors.mutedForeground} />
+        </BlurView>
+      </TouchableOpacity>
 
       <TouchableOpacity
         onPress={handleSignOut}
@@ -451,47 +435,6 @@ const styles = StyleSheet.create({
   calendarDotActive: {
     backgroundColor: colors.primary,
   },
-  sectionTitle: {
-    fontFamily: typography.display,
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.foreground,
-    marginBottom: spacing.md,
-    letterSpacing: 2,
-  },
-  emptyRuns: {
-    overflow: "hidden",
-    borderRadius: radius.lg,
-    padding: spacing["2xl"],
-    borderWidth: 1,
-    borderColor: colors.glassBorder,
-  },
-  emptyRunsText: { fontSize: 14, color: colors.mutedForeground, textAlign: "center" },
-  runsList: { gap: spacing.sm },
-  runCard: {
-    overflow: "hidden",
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.glassBorder,
-  },
-  runCardLeft: {},
-  runDate: { fontSize: 14, fontWeight: "500", color: colors.foreground },
-  runMeta: { fontSize: 12, color: colors.mutedForeground, marginTop: 2 },
-  claimedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(0, 255, 136, 0.1)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  claimedText: { fontSize: 10, fontWeight: "600", color: colors.primary },
   signOutButton: {
     marginTop: spacing["2xl"],
     paddingVertical: 14,
