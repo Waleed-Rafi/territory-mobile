@@ -1,6 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
-import { Shield, Flame, MapPin, TrendingUp, LogOut, Bell, ChevronRight } from "lucide-react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
+import { Shield, Flame, MapPin, TrendingUp, LogOut, Bell, ChevronRight, Trophy, Target, Calendar } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../contexts/AuthContext";
@@ -9,42 +19,94 @@ import { formatDistance, formatDuration } from "../lib/gps";
 import { colors, radius, spacing, typography } from "../theme";
 import type { ProfileDisplay, RunDisplay } from "../types/domain";
 import { formatRunDate } from "../utils/format";
+import { getWeeklyGoalKm, setWeeklyGoalKm } from "../utils/weeklyGoalStorage";
+import {
+  getRunDates,
+  getCurrentStreak,
+  getLongestStreak,
+  getWeekStart,
+  getMonthStart,
+  statsInPeriod,
+} from "../utils/streaks";
+
+const NINETY_DAYS_AGO = new Date(Date.now() - 90 * 864e5).toISOString();
 
 export default function ProfileScreen(): React.ReactElement {
   const navigation = useNavigation();
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<ProfileDisplay | null>(null);
   const [runs, setRuns] = useState<RunDisplay[]>([]);
+  const [runsForStats, setRunsForStats] = useState<{ started_at: string; distance: number }[]>([]);
+  const [weeklyGoalKm, setWeeklyGoalKmState] = useState(0);
+  const [goalModalVisible, setGoalModalVisible] = useState(false);
+  const [goalInput, setGoalInput] = useState("");
 
   const openRunReminders = () => {
     (navigation.getParent() as { navigate: (name: string) => void } | undefined)?.navigate("RunReminder");
   };
 
+  const loadProfile = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("username, display_name, city, total_distance, total_runs, territories_owned, territories_defended, level")
+      .eq("user_id", user.id)
+      .single();
+    if (data) setProfile(data as ProfileDisplay);
+  }, [user]);
+
+  const loadRuns = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("runs")
+      .select("id, distance, duration, territory_claimed, started_at")
+      .eq("user_id", user.id)
+      .order("started_at", { ascending: false })
+      .limit(10);
+    if (data) setRuns(data as RunDisplay[]);
+  }, [user]);
+
+  const loadRunsForStats = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("runs")
+      .select("started_at, distance")
+      .eq("user_id", user.id)
+      .gte("started_at", NINETY_DAYS_AGO);
+    if (data) setRunsForStats(data as { started_at: string; distance: number }[]);
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
-    const loadProfile = async (): Promise<void> => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("username, display_name, city, total_distance, total_runs, territories_owned, territories_defended, level")
-        .eq("user_id", user.id)
-        .single();
-      if (data) setProfile(data as ProfileDisplay);
-    };
-    const loadRuns = async (): Promise<void> => {
-      const { data } = await supabase
-        .from("runs")
-        .select("id, distance, duration, territory_claimed, started_at")
-        .eq("user_id", user.id)
-        .order("started_at", { ascending: false })
-        .limit(10);
-      if (data) setRuns(data as RunDisplay[]);
-    };
     loadProfile();
     loadRuns();
-  }, [user]);
+    loadRunsForStats();
+    getWeeklyGoalKm().then(setWeeklyGoalKmState);
+  }, [user, loadProfile, loadRuns, loadRunsForStats]);
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const runDates = getRunDates(runsForStats.map((r) => r.started_at));
+  const currentStreak = getCurrentStreak(runDates);
+  const longestStreak = getLongestStreak(runDates);
+  const weekStart = getWeekStart(new Date());
+  const monthStart = getMonthStart(new Date());
+  const thisWeek = statsInPeriod(runsForStats, weekStart);
+  const thisMonth = statsInPeriod(runsForStats, monthStart);
+
+  const openGoalModal = () => {
+    setGoalInput(weeklyGoalKm > 0 ? String(weeklyGoalKm) : "");
+    setGoalModalVisible(true);
+  };
+  const saveGoal = async () => {
+    const km = parseFloat(goalInput.replace(",", "."));
+    if (Number.isFinite(km) && km >= 0) {
+      await setWeeklyGoalKm(km);
+      setWeeklyGoalKmState(km);
+    }
+    setGoalModalVisible(false);
   };
 
   const stats = [
@@ -53,6 +115,25 @@ export default function ProfileScreen(): React.ReactElement {
     { icon: TrendingUp, label: "Distance", value: formatDistance(profile?.total_distance || 0) },
     { icon: Shield, label: "Defended", value: profile?.territories_defended?.toString() || "0" },
   ];
+
+  const weeksForCalendar = 5;
+  const runDateSet = new Set(runDates);
+  const today = new Date();
+  const thisWeekSunday = new Date(today);
+  thisWeekSunday.setDate(today.getDate() - today.getDay());
+  type WeekColumn = { label: string; cells: { dateKey: string; hasRun: boolean }[] };
+  const calendarWeeks: WeekColumn[] = [];
+  for (let w = 0; w < weeksForCalendar; w++) {
+    const label = w === 0 ? "Current week" : `Week ${weeksForCalendar - w}`;
+    const cells: { dateKey: string; hasRun: boolean }[] = [];
+    for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+      const d = new Date(thisWeekSunday);
+      d.setDate(thisWeekSunday.getDate() + dayOfWeek - w * 7);
+      const key = d.toISOString().slice(0, 10);
+      cells.push({ dateKey: key, hasRun: runDateSet.has(key) });
+    }
+    calendarWeeks.push({ label, cells });
+  }
 
   return (
     <ScrollView
@@ -86,6 +167,31 @@ export default function ProfileScreen(): React.ReactElement {
         ))}
       </View>
 
+      {currentStreak > 0 && (
+        <BlurView intensity={70} tint="dark" style={styles.streakCard}>
+          <Flame size={20} stroke={colors.primary} />
+          <View style={styles.streakTextWrap}>
+            <Text style={styles.streakTitle}>{currentStreak} day streak</Text>
+            <Text style={styles.streakSub}>Longest: {longestStreak} days</Text>
+          </View>
+        </BlurView>
+      )}
+
+      <TouchableOpacity onPress={openGoalModal} style={styles.remindersRow} activeOpacity={0.8}>
+        <BlurView intensity={70} tint="dark" style={styles.remindersCard}>
+          <Target size={18} stroke={colors.primary} style={styles.remindersIcon} />
+          <View style={styles.remindersTextWrap}>
+            <Text style={styles.remindersTitle}>Weekly goal</Text>
+            <Text style={styles.remindersSub}>
+              {weeklyGoalKm > 0
+                ? `This week: ${thisWeek.distanceKm.toFixed(1)} / ${weeklyGoalKm} km · ${thisWeek.runCount} runs`
+                : "Set a distance target to stay motivated"}
+            </Text>
+          </View>
+          <ChevronRight size={20} stroke={colors.mutedForeground} />
+        </BlurView>
+      </TouchableOpacity>
+
       <TouchableOpacity onPress={openRunReminders} style={styles.remindersRow} activeOpacity={0.8}>
         <BlurView intensity={70} tint="dark" style={styles.remindersCard}>
           <Bell size={18} stroke={colors.primary} style={styles.remindersIcon} />
@@ -96,6 +202,58 @@ export default function ProfileScreen(): React.ReactElement {
           <ChevronRight size={20} stroke={colors.mutedForeground} />
         </BlurView>
       </TouchableOpacity>
+
+      <View style={styles.remindersRow}>
+        <BlurView intensity={70} tint="dark" style={[styles.remindersCard, styles.leaderboardCard]}>
+          <Trophy size={18} stroke={colors.mutedForeground} style={styles.remindersIcon} />
+          <View style={styles.remindersTextWrap}>
+            <Text style={[styles.remindersTitle, styles.leaderboardTitle]}>Leaderboard</Text>
+            <Text style={styles.remindersSub}>Compete with other runners</Text>
+          </View>
+          <View style={styles.comingSoonChip}>
+            <Text style={styles.comingSoonText}>Coming soon</Text>
+          </View>
+        </BlurView>
+      </View>
+
+      <View style={styles.periodRow}>
+        <BlurView intensity={70} tint="dark" style={styles.periodCard}>
+          <Text style={styles.periodLabel}>This week</Text>
+          <Text style={styles.periodValue}>{thisWeek.distanceKm.toFixed(1)} km</Text>
+          <Text style={styles.periodSub}>{thisWeek.runCount} runs</Text>
+        </BlurView>
+        <BlurView intensity={70} tint="dark" style={styles.periodCard}>
+          <Text style={styles.periodLabel}>This month</Text>
+          <Text style={styles.periodValue}>{thisMonth.distanceKm.toFixed(1)} km</Text>
+          <Text style={styles.periodSub}>{thisMonth.runCount} runs</Text>
+        </BlurView>
+      </View>
+
+      <View style={styles.calendarWrap}>
+        <View style={styles.calendarHeader}>
+          <Calendar size={14} stroke={colors.mutedForeground} />
+          <Text style={styles.calendarTitle}>Last 5 weeks</Text>
+        </View>
+        <View style={styles.calendarRows}>
+          {calendarWeeks.map((week, wIdx) => (
+            <View key={wIdx} style={styles.calendarRow}>
+              <View style={styles.calendarLabelCell}>
+                <Text style={styles.calendarWeekLabel} numberOfLines={1}>
+                  {week.label}
+                </Text>
+              </View>
+              <View style={styles.calendarDotsRow}>
+                {week.cells.map((cell) => (
+                  <View
+                    key={cell.dateKey}
+                    style={[styles.calendarDot, cell.hasRun && styles.calendarDotActive]}
+                  />
+                ))}
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
 
       <Text style={styles.sectionTitle}>RECENT RUNS</Text>
       {runs.length === 0 ? (
@@ -132,6 +290,47 @@ export default function ProfileScreen(): React.ReactElement {
         <LogOut size={16} stroke={colors.destructive} />
         <Text style={styles.signOutText}>Sign Out</Text>
       </TouchableOpacity>
+
+      <Modal
+        visible={goalModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setGoalModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalBackdrop}
+          activeOpacity={1}
+          onPress={() => setGoalModalVisible(false)}
+        >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={styles.modalContentWrap}
+          >
+            <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+              <BlurView intensity={90} tint="dark" style={styles.goalModalCard}>
+                <Text style={styles.goalModalTitle}>Weekly goal (km)</Text>
+                <Text style={styles.goalModalHint}>Distance you want to run per week</Text>
+                <TextInput
+                  style={styles.goalInput}
+                  value={goalInput}
+                  onChangeText={setGoalInput}
+                  placeholder="e.g. 10"
+                  placeholderTextColor={colors.mutedForeground}
+                  keyboardType="decimal-pad"
+                />
+                <View style={styles.goalModalButtons}>
+                  <TouchableOpacity style={styles.goalModalButtonSecondary} onPress={() => setGoalModalVisible(false)}>
+                    <Text style={styles.goalModalButtonSecondaryText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.goalModalButtonPrimary} onPress={saveGoal}>
+                    <Text style={styles.goalModalButtonPrimaryText}>Save</Text>
+                  </TouchableOpacity>
+                </View>
+              </BlurView>
+            </TouchableOpacity>
+          </KeyboardAvoidingView>
+        </TouchableOpacity>
+      </Modal>
     </ScrollView>
   );
 }
@@ -170,7 +369,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.md,
-    marginBottom: spacing["2xl"],
+    marginBottom: spacing.md,
   },
   statCard: {
     overflow: "hidden",
@@ -183,7 +382,20 @@ const styles = StyleSheet.create({
   statIcon: { marginBottom: 8 },
   statValue: { fontFamily: typography.mono, fontSize: 22, fontWeight: "700", color: colors.foreground },
   statLabel: { fontSize: 10, color: colors.mutedForeground, marginTop: 4, letterSpacing: 1 },
-  remindersRow: { marginBottom: spacing.xl },
+  streakCard: {
+    overflow: "hidden",
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+  },
+  streakTextWrap: { marginLeft: spacing.md },
+  streakTitle: { fontSize: 16, fontWeight: "700", color: colors.foreground },
+  streakSub: { fontSize: 12, color: colors.mutedForeground, marginTop: 2 },
+  remindersRow: { marginBottom: spacing.md },
   remindersCard: {
     overflow: "hidden",
     borderRadius: radius.lg,
@@ -193,10 +405,52 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
+  leaderboardCard: { opacity: 0.9 },
+  leaderboardTitle: { color: colors.mutedForeground },
   remindersIcon: { marginRight: spacing.md },
   remindersTextWrap: { flex: 1 },
   remindersTitle: { fontSize: 15, fontWeight: "600", color: colors.foreground },
   remindersSub: { fontSize: 12, color: colors.mutedForeground, marginTop: 2 },
+  comingSoonChip: {
+    backgroundColor: colors.muted,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  comingSoonText: { fontSize: 11, color: colors.mutedForeground, fontWeight: "600" },
+  periodRow: { flexDirection: "row", gap: spacing.md, marginBottom: spacing.lg },
+  periodCard: {
+    flex: 1,
+    overflow: "hidden",
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+  },
+  periodLabel: { fontSize: 11, color: colors.mutedForeground, letterSpacing: 1 },
+  periodValue: { fontFamily: typography.mono, fontSize: 18, fontWeight: "700", color: colors.primary, marginTop: 4 },
+  periodSub: { fontSize: 11, color: colors.mutedForeground, marginTop: 2 },
+  calendarWrap: { marginBottom: spacing.xl },
+  calendarHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: spacing.sm },
+  calendarTitle: { fontSize: 12, color: colors.mutedForeground },
+  calendarRows: { gap: 6 },
+  calendarRow: { flexDirection: "row", alignItems: "center" },
+  calendarLabelCell: { width: 100, justifyContent: "center" },
+  calendarWeekLabel: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    fontFamily: typography.mono,
+  },
+  calendarDotsRow: { flexDirection: "row", gap: 4, flex: 0 },
+  calendarDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 2,
+    backgroundColor: colors.secondary,
+  },
+  calendarDotActive: {
+    backgroundColor: colors.primary,
+  },
   sectionTitle: {
     fontFamily: typography.display,
     fontSize: 14,
@@ -251,4 +505,47 @@ const styles = StyleSheet.create({
     borderColor: colors.glassBorder,
   },
   signOutText: { fontSize: 14, color: colors.destructive, fontWeight: "500" },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    padding: spacing.xl,
+  },
+  modalContentWrap: { justifyContent: "center" },
+  goalModalCard: {
+    overflow: "hidden",
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+  },
+  goalModalTitle: { fontFamily: typography.display, fontSize: 18, fontWeight: "700", color: colors.foreground },
+  goalModalHint: { fontSize: 12, color: colors.mutedForeground, marginTop: 4 },
+  goalInput: {
+    marginTop: spacing.lg,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.secondary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    fontSize: 16,
+    color: colors.foreground,
+  },
+  goalModalButtons: { flexDirection: "row", gap: spacing.md, marginTop: spacing.xl },
+  goalModalButtonSecondary: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    alignItems: "center",
+    backgroundColor: colors.secondary,
+  },
+  goalModalButtonSecondaryText: { color: colors.foreground },
+  goalModalButtonPrimary: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    alignItems: "center",
+    backgroundColor: colors.primary,
+  },
+  goalModalButtonPrimaryText: { color: colors.primaryForeground, fontWeight: "700" },
 });
