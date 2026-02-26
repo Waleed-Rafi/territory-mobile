@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Territory",
+    "slug": "territory-native",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "territory",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f1729"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.territory.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Territory needs location to track your runs and show the map.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Territory uses location to record your run and claim territory."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f1729"
+      },
+      "package": "com.territory.app",
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+    },
+    "plugins": [
+      "expo-splash-screen",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Territory needs location to track your runs and show the map."
+        }
+      ]
+    ]
+  }
+}

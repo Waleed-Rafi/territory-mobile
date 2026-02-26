@@ -1,0 +1,51 @@
+import React from "react";
+import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useAuth } from "../contexts/AuthContext";
+import AuthScreen from "../screens/AuthScreen";
+import TabNavigator from "./TabNavigator";
+import { colors, typography } from "../theme";
+import type { RootStackParamList } from "../types/navigation";
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+export default function RootNavigator(): React.ReactElement {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>LOADING</Text>
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Auth">
+          {() => <AuthScreen onAuthSuccess={() => {}} />}
+        </Stack.Screen>
+      </Stack.Navigator>
+    );
+  }
+
+  return <TabNavigator />;
+}
+
+const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    backgroundColor: colors.background,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 12,
+    color: colors.mutedForeground,
+    fontFamily: typography.display,
+    letterSpacing: 2,
+  },
+});
