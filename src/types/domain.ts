@@ -45,6 +45,14 @@ export interface RunDisplay {
   started_at: string;
 }
 
+/** Run summary for activity feed (from runs join) */
+export interface RunSummary {
+  name: string | null;
+  description: string | null;
+  photo_urls: string[] | null;
+  route_polyline: [number, number][] | null;
+}
+
 /** Activity fields we display in the feed */
 export interface ActivityDisplay {
   id: string;
@@ -53,4 +61,6 @@ export interface ActivityDisplay {
   description: string | null;
   is_urgent: boolean;
   created_at: string;
+  run_id: string | null;
+  run?: RunSummary | null;
 }

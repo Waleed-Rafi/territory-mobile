@@ -5,6 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import AuthScreen from "../screens/AuthScreen";
 import TabNavigator from "./TabNavigator";
 import RunReminderScreen from "../screens/RunReminderScreen";
+import NameYourRunScreen from "../screens/NameYourRunScreen";
 import { colors, typography } from "../theme";
 import type { RootStackParamList } from "../types/navigation";
 
@@ -36,6 +37,7 @@ export default function RootNavigator(): React.ReactElement {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Main" component={TabNavigator} />
       <Stack.Screen name="RunReminder" component={RunReminderScreen} />
+      <Stack.Screen name="NameYourRun" component={NameYourRunScreen} options={{ headerShown: true, headerTitle: "Name your run", headerBackTitle: "Back", headerTintColor: colors.primary, headerStyle: { backgroundColor: colors.background }, headerShadowVisible: false }} />
     </Stack.Navigator>
   );
 }

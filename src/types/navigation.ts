@@ -6,11 +6,21 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { CompositeScreenProps } from "@react-navigation/native";
 
-/** Root stack: Auth when unauthenticated; Main + RunReminder when authenticated */
+/** Params for NameYourRun (post-run details: name, description, photos, route) */
+export type NameYourRunParams = {
+  runId: string;
+  routePolyline: [number, number][];
+  activityType: "run_completed" | "territory_claimed";
+  suggestedTitle: string;
+  suggestedDescription: string;
+};
+
+/** Root stack: Auth when unauthenticated; Main + RunReminder + NameYourRun when authenticated */
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
   RunReminder: undefined;
+  NameYourRun: NameYourRunParams;
 };
 
 /** Main tab screens (authenticated) */

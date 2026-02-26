@@ -14,7 +14,7 @@ Native React Native (Expo) app that mirrors the **Territory** web app: same desi
 2. **Environment**
    Copy `.env.example` to `.env` and set:
    - `EXPO_PUBLIC_SUPABASE_URL` – your Supabase project URL (same as web app)
-   - `EXPO_PUBLIC_SUPABASE_ANON_KEY` – your Supabase anon key
+   - `EXPO_PUBLIC_SUPABASE_KEY` – your Supabase publishable key
 
 3. **Assets**  
    Replace `assets/icon.png`, `splash-icon.png`, `adaptive-icon.png`, `favicon.png` with your app icons (e.g. 1024×1024 for icon).

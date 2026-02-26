@@ -13,6 +13,7 @@ import { Play, Square, MapPin, Ruler, Gauge, AlertTriangle, CheckCircle } from "
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../supabase/client";
 import { useRunTracking } from "../hooks/useRunTracking";
+import { cancelRunReminderFollowUp } from "../utils/runReminders";
 import {
   calculateTotalDistance,
   isClosedLoop,
@@ -26,14 +27,18 @@ import {
 } from "../lib/gps";
 import { colors, radius, spacing, typography } from "../theme";
 import { BlurView } from "expo-blur";
-import type { RunInsert, ActivityInsert, TerritoryInsert } from "../types/database";
-import { ActivityType } from "../types/domain";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RunInsert, TerritoryInsert } from "../types/database";
+import type { RootStackParamList } from "../types/navigation";
 
 /** Fallback when no location/route yet – Pakistan center (matches MapScreen). */
 const FALLBACK_MAP_CENTER = { latitude: 33.6844, longitude: 73.0479 };
 
 export default function RunScreen(): React.ReactElement {
   const { user } = useAuth();
+  const tabNav = useNavigation();
+  const rootNav = tabNav.getParent() as NativeStackNavigationProp<RootStackParamList, "NameYourRun"> | undefined;
   const [elapsed, setElapsed] = useState(0);
   const [saving, setSaving] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -82,6 +87,8 @@ export default function RunScreen(): React.ReactElement {
   }, [tracking, routeCoordinates.length]);
 
   const handleStart = () => {
+    const weekday = (new Date().getDay() - 1 + 7) % 7;
+    cancelRunReminderFollowUp(weekday);
     startTracking();
   };
 
@@ -134,9 +141,11 @@ export default function RunScreen(): React.ReactElement {
           .eq("user_id", user.id);
       }
 
+      let claimedAreaSqKm: number | null = null;
       if (canClaimTerritory && run) {
         const polygon = pointsToPolygon(points);
         const area = calculatePolygonArea(polygon);
+        claimedAreaSqKm = area / 1e6;
         const center = getPolygonCenter(polygon);
         const territoryData: TerritoryInsert = {
           owner_id: user.id,
@@ -147,34 +156,24 @@ export default function RunScreen(): React.ReactElement {
           strength: 100,
           created_from_run_id: run.id,
         };
-        const { error: terrError } = await supabase.from("territories").insert(territoryData);
-        if (!terrError) {
-          const activityData: ActivityInsert = {
-            user_id: user.id,
-            type: ActivityType.TerritoryClaimed,
-            title: "New Territory Claimed!",
-            description: `Claimed ${(area / 1e6).toFixed(3)} km² with a ${formatDistance(totalDistance)} run`,
-            run_id: run.id,
-          };
-          await supabase.from("activities").insert(activityData);
-          Alert.alert("Success", "Territory claimed! 🏴");
-        }
-      } else {
-        const activityData: ActivityInsert = {
-          user_id: user.id,
-          type: ActivityType.RunCompleted,
-          title: "Run Completed",
-          description: `${formatDistance(totalDistance)} in ${formatDuration(elapsed)}`,
-          run_id: run.id,
-        };
-        await supabase.from("activities").insert(activityData);
-        if (!validation.valid) {
-          Alert.alert("Saved", "Run saved but not valid for territory: " + validation.reasons[0]);
-        } else if (!closedLoop) {
-          Alert.alert("Saved", "Run saved! Close the loop next time to claim territory.");
-        } else {
-          Alert.alert("Success", "Run saved!");
-        }
+        await supabase.from("territories").insert(territoryData);
+      }
+
+      if (run) {
+        const routePolyline = points.map((p) => [p.lat, p.lng] as [number, number]);
+        const activityType = canClaimTerritory ? "territory_claimed" : "run_completed";
+        const suggestedTitle = canClaimTerritory ? "New Territory Claimed!" : "Run Completed";
+        const suggestedDescription =
+          canClaimTerritory && claimedAreaSqKm != null
+            ? `Claimed ${claimedAreaSqKm.toFixed(3)} km² with a ${formatDistance(totalDistance)} run`
+            : `${formatDistance(totalDistance)} in ${formatDuration(elapsed)}`;
+        rootNav?.navigate("NameYourRun", {
+          runId: run.id,
+          routePolyline,
+          activityType,
+          suggestedTitle,
+          suggestedDescription,
+        });
       }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Failed to save run";

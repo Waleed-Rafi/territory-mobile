@@ -109,6 +109,9 @@ export interface RunRow {
   is_valid: boolean;
   gps_points: Json;
   route_polyline: Json | null;
+  name: string | null;
+  description: string | null;
+  photo_urls: string[] | Json | null;
   created_at: string;
 }
 
@@ -123,6 +126,9 @@ export interface RunInsert {
   is_valid?: boolean;
   gps_points?: Json;
   route_polyline?: Json | null;
+  name?: string | null;
+  description?: string | null;
+  photo_urls?: string[] | Json | null;
 }
 
 /** Territory table – row and insert */
