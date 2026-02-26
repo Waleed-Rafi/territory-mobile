@@ -15,6 +15,7 @@ import {
   JetBrainsMono_700Bold,
 } from "@expo-google-fonts/jetbrains-mono";
 import { AuthProvider } from "./src/contexts/AuthContext";
+import { AlertProvider } from "./src/contexts/AlertContext";
 import RootNavigator from "./src/navigation/RootNavigator";
 import { setRunReminderNotificationHandler } from "./src/utils/runReminders";
 import { colors } from "./src/theme";
@@ -49,7 +50,9 @@ export default function App() {
       <StatusBar style="light" />
       <NavigationContainer>
         <AuthProvider>
-          <RootNavigator />
+          <AlertProvider>
+            <RootNavigator />
+          </AlertProvider>
         </AuthProvider>
       </NavigationContainer>
     </SafeAreaProvider>

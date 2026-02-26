@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
   ActivityIndicator,
   Image,
   Platform,
@@ -17,6 +16,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as ImagePicker from "expo-image-picker";
 import { Camera, X } from "lucide-react-native";
 import { useAuth } from "../contexts/AuthContext";
+import { useAlert } from "../contexts/AlertContext";
 import { supabase } from "../supabase/client";
 import { colors, radius, spacing, typography } from "../theme";
 import type { RootStackParamList } from "../types/navigation";
@@ -37,6 +37,7 @@ export default function NameYourRunScreen(): React.ReactElement {
   const route = useRoute<RouteProp>();
   const navigation = useNavigation<NavProp>();
   const { user } = useAuth();
+  const alert = useAlert();
   const { runId, routePolyline, activityType, suggestedTitle, suggestedDescription } = route.params;
 
   const [name, setName] = useState(defaultRunName());
@@ -64,7 +65,7 @@ export default function NameYourRunScreen(): React.ReactElement {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission needed", "Allow photo access to add run photos.");
+      alert.show("Permission needed", "Allow photo access to add run photos.");
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -103,7 +104,7 @@ export default function NameYourRunScreen(): React.ReactElement {
   const handleSave = async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      Alert.alert("Name required", "Give your run a name.");
+      alert.show("Name required", "Give your run a name.");
       return;
     }
     if (!user) return;
@@ -113,14 +114,16 @@ export default function NameYourRunScreen(): React.ReactElement {
       try {
         photoUrls = await uploadPhotos();
       } catch (e) {
-        Alert.alert("Upload failed", "Could not upload some photos. Save without them?");
-        const go = await new Promise<boolean>((res) => {
-          Alert.alert("Save anyway?", "You can add photos later.", [
-            { text: "Cancel", onPress: () => res(false) },
-            { text: "Save", onPress: () => res(true) },
-          ]);
+        alert.show("Upload failed", "Could not upload some photos. Save without them?");
+        const choice = await alert.showAsync({
+          title: "Save anyway?",
+          message: "You can add photos later.",
+          buttons: [
+            { text: "Cancel", style: "cancel" },
+            { text: "Save" },
+          ],
         });
-        if (!go) {
+        if (choice !== 1) {
           setSaving(false);
           return;
         }
@@ -147,12 +150,14 @@ export default function NameYourRunScreen(): React.ReactElement {
       const { error: activityError } = await supabase.from("activities").insert(activityData);
       if (activityError) throw activityError;
 
-      Alert.alert("Saved", activityType === "territory_claimed" ? "Territory claimed!" : "Run saved!", [
-        { text: "OK", onPress: () => navigation.goBack() },
-      ]);
+      alert.show({
+        title: "Saved",
+        message: activityType === "territory_claimed" ? "Territory claimed!" : "Run saved!",
+        buttons: [{ text: "OK", onPress: () => navigation.goBack() }],
+      });
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Failed to save";
-      Alert.alert("Error", message);
+      alert.show("Error", message);
     } finally {
       setSaving(false);
     }

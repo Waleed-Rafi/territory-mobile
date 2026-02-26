@@ -4,13 +4,13 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   Platform,
 } from "react-native";
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
 import { Play, Square, MapPin, Ruler, Gauge, AlertTriangle, CheckCircle } from "lucide-react-native";
 import { useAuth } from "../contexts/AuthContext";
+import { useAlert } from "../contexts/AlertContext";
 import { supabase } from "../supabase/client";
 import { useRunTracking } from "../hooks/useRunTracking";
 import { cancelRunReminderFollowUp } from "../utils/runReminders";
@@ -37,6 +37,7 @@ const FALLBACK_MAP_CENTER = { latitude: 33.6844, longitude: 73.0479 };
 
 export default function RunScreen(): React.ReactElement {
   const { user } = useAuth();
+  const alert = useAlert();
   const tabNav = useNavigation();
   const rootNav = tabNav.getParent() as NativeStackNavigationProp<RootStackParamList, "NameYourRun"> | undefined;
   const [elapsed, setElapsed] = useState(0);
@@ -99,7 +100,7 @@ export default function RunScreen(): React.ReactElement {
       timerRef.current = null;
     }
     if (!user || points.length < 5) {
-      Alert.alert("Error", "Run too short to save");
+      alert.show("Error", "Run too short to save");
       return;
     }
     setSaving(true);
@@ -177,7 +178,7 @@ export default function RunScreen(): React.ReactElement {
       }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Failed to save run";
-      Alert.alert("Error", message);
+      alert.show("Error", message);
     } finally {
       setSaving(false);
     }

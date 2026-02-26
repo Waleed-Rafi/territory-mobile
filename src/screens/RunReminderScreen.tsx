@@ -6,12 +6,12 @@ import {
   StyleSheet,
   ScrollView,
   Switch,
-  Alert,
   Platform,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Bell, ChevronLeft } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useAlert } from "../contexts/AlertContext";
 import { getRunSchedule, setRunSchedule } from "../utils/runScheduleStorage";
 import {
   requestNotificationPermission,
@@ -37,6 +37,7 @@ function adjustTime(hour: number, minute: number, delta: number): { hour: number
 
 export default function RunReminderScreen(): React.ReactElement {
   const navigation = useNavigation();
+  const alert = useAlert();
   const [schedule, setSchedule] = useState<RunSchedule | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -68,11 +69,11 @@ export default function RunReminderScreen(): React.ReactElement {
       if (schedule.enabled && schedule.days.length > 0) {
         const granted = await requestNotificationPermission();
         if (!granted) {
-          Alert.alert(
-            "Notifications off",
-            "Enable notifications in Settings to get run reminders.",
-            [{ text: "OK" }]
-          );
+          alert.show({
+            title: "Notifications off",
+            message: "Enable notifications in Settings to get run reminders.",
+            buttons: [{ text: "OK" }],
+          });
           updateSchedule({ enabled: false });
         }
       }
@@ -84,7 +85,7 @@ export default function RunReminderScreen(): React.ReactElement {
       }
       navigation.goBack();
     } catch (e) {
-      Alert.alert("Error", "Could not save reminders. Try again.");
+      alert.show("Error", "Could not save reminders. Try again.");
     } finally {
       setSaving(false);
     }

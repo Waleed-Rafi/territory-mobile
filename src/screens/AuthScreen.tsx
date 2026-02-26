@@ -9,12 +9,12 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import * as WebBrowser from "expo-web-browser";
 import { supabase } from "../supabase/client";
+import { useAlert } from "../contexts/AlertContext";
 import { colors, radius, spacing, typography } from "../theme";
 
 export interface AuthScreenProps {
@@ -22,6 +22,7 @@ export interface AuthScreenProps {
 }
 
 export default function AuthScreen({ onAuthSuccess }: AuthScreenProps): React.ReactElement {
+  const alert = useAlert();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,7 +31,7 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps): React.Re
   const [loading, setLoading] = useState(false);
 
   const show = (msg: string, isError = false) => {
-    Alert.alert(isError ? "Error" : "Success", msg);
+    alert.show(isError ? "Error" : "Success", msg);
   };
 
   const handleSubmit = async () => {
@@ -55,7 +56,7 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps): React.Re
           },
         });
         if (error) throw error;
-        show("Check your email to confirm your account!");
+        show("Account created! Sign in with your email and password.");
       }
     } catch (e: unknown) {
       show(e instanceof Error ? e.message : "Authentication failed", true);
