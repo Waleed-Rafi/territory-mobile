@@ -1,10 +1,13 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
 import { useAlert } from "../contexts/AlertContext";
 import { supabase } from "../supabase/client";
 import Constants from "expo-constants";
 import { colors, spacing, typography } from "../theme";
+
+/** Replace with your real support email before store submission. */
+const SUPPORT_EMAIL = "support@territory.app";
 
 export default function AboutScreen(): React.ReactElement {
   const { user, signOut } = useAuth();
@@ -120,9 +123,11 @@ export default function AboutScreen(): React.ReactElement {
 
       <Text style={styles.heading}>10. Contact Us</Text>
       <Text style={styles.body}>
-        For privacy questions, data requests, or support, please contact us via the contact details provided
-        in the App Store or Play Store listing for Territory.
+        For privacy questions, data requests, or support, contact us at:
       </Text>
+      <TouchableOpacity onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`)} style={styles.supportLink}>
+        <Text style={styles.supportLinkText}>{SUPPORT_EMAIL}</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.deactivateButton} onPress={handleDeactivateAccount}>
         <Text style={styles.deactivateButtonText}>Deactivate my account</Text>
@@ -173,6 +178,8 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: spacing.sm,
   },
+  supportLink: { marginTop: spacing.sm },
+  supportLinkText: { fontSize: 14, color: colors.primary, textDecorationLine: "underline" },
   deactivateButton: {
     marginTop: spacing["2xl"],
     paddingVertical: 12,
