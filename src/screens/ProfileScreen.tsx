@@ -45,7 +45,7 @@ export default function ProfileScreen(): React.ReactElement {
   const [goalInput, setGoalInput] = useState("");
 
   const openRunReminders = () => {
-    (navigation.getParent() as { navigate: (name: string) => void } | undefined)?.navigate("RunReminder");
+    rootNav?.navigate("RunReminder");
   };
 
   const loadProfile = useCallback(async () => {

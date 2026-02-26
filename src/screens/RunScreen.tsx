@@ -39,7 +39,7 @@ export default function RunScreen(): React.ReactElement {
   const { user } = useAuth();
   const alert = useAlert();
   const tabNav = useNavigation();
-  const rootNav = tabNav.getParent() as NativeStackNavigationProp<RootStackParamList, "NameYourRun"> | undefined;
+  const rootNav = tabNav.getParent<NativeStackNavigationProp<RootStackParamList>>();
   const [elapsed, setElapsed] = useState(0);
   const [saving, setSaving] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);

@@ -1,32 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
+import React from "react";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
 import { BlurView } from "expo-blur";
 import { useRoute, RouteProp } from "@react-navigation/native";
-import { supabase } from "../supabase/client";
 import { colors, radius, spacing, typography } from "../theme";
+import { RunPhotoThumbnail } from "../components/RunPhotoThumbnail";
 import { getActivityIcon, getActivityColor } from "../constants/activity";
 import { timeAgo } from "../utils/format";
 import type { RootStackParamList } from "../types/navigation";
 import type { ActivityDisplay } from "../types/domain";
 
 type ActivityDetailRouteProp = RouteProp<RootStackParamList, "ActivityDetail">;
-
-function RunPhotoThumbnail({ path, size }: { path: string; size: number }): React.ReactElement {
-  const [uri, setUri] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    supabase.storage
-      .from("run-photos")
-      .createSignedUrl(path, 3600)
-      .then(({ data }) => {
-        if (!cancelled && data?.signedUrl) setUri(data.signedUrl);
-      });
-    return () => { cancelled = true; };
-  }, [path]);
-  if (!uri) return <View style={[styles.thumbPlaceholder, { width: size, height: size }]} />;
-  return <Image source={{ uri }} style={{ width: size, height: size, borderRadius: radius.sm }} />;
-}
 
 export default function ActivityDetailScreen(): React.ReactElement {
   const route = useRoute<ActivityDetailRouteProp>();
@@ -149,7 +133,6 @@ const styles = StyleSheet.create({
   runName: { fontSize: 16, fontWeight: "600", color: colors.foreground },
   runDesc: { fontSize: 14, color: colors.mutedForeground, marginTop: 4, lineHeight: 20 },
   photoRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  thumbPlaceholder: { backgroundColor: colors.secondary, borderRadius: radius.sm },
   mapWrap: { height: 220, borderRadius: radius.sm, overflow: "hidden", backgroundColor: colors.secondary },
   detailMap: { flex: 1, width: "100%", height: "100%" },
 });

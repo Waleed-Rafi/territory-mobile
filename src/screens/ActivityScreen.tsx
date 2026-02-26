@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from "react-native";
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
 import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
@@ -10,25 +10,9 @@ import { Loader } from "../components/Loaders";
 import { colors, radius, spacing, typography } from "../theme";
 import type { ActivityDisplay, RunSummary } from "../types/domain";
 import type { RootStackParamList } from "../types/navigation";
+import { RunPhotoThumbnail } from "../components/RunPhotoThumbnail";
 import { getActivityIcon, getActivityColor } from "../constants/activity";
 import { timeAgo } from "../utils/format";
-
-/** Thumbnail that loads a run photo from Supabase Storage (signed URL). */
-function RunPhotoThumbnail({ path, size }: { path: string; size: number }): React.ReactElement {
-  const [uri, setUri] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    supabase.storage
-      .from("run-photos")
-      .createSignedUrl(path, 3600)
-      .then(({ data }) => {
-        if (!cancelled && data?.signedUrl) setUri(data.signedUrl);
-      });
-    return () => { cancelled = true; };
-  }, [path]);
-  if (!uri) return <View style={[styles.thumbPlaceholder, { width: size, height: size }]} />;
-  return <Image source={{ uri }} style={{ width: size, height: size, borderRadius: radius.sm }} />;
-}
 
 /** Normalize run from Supabase join (can be object or null). */
 function normalizeRun(r: unknown): RunSummary | null {
@@ -225,7 +209,6 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 14, fontWeight: "600", color: colors.foreground },
   cardDesc: { fontSize: 12, color: colors.mutedForeground, marginTop: 2 },
   photoRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.sm },
-  thumbPlaceholder: { backgroundColor: colors.secondary, borderRadius: radius.sm },
   mapWrap: { height: 100, borderRadius: radius.sm, overflow: "hidden", marginTop: spacing.sm, backgroundColor: colors.secondary },
   miniMap: { flex: 1, width: "100%", height: "100%" },
   cardTime: { fontSize: 10, color: colors.mutedForeground, marginLeft: spacing.sm },
