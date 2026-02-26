@@ -6,6 +6,7 @@ import { useRoute, RouteProp } from "@react-navigation/native";
 import { colors, radius, spacing, typography } from "../theme";
 import { polylineToMapRegion } from "../lib/gps";
 import { RunPhotoThumbnail } from "../components/RunPhotoThumbnail";
+import { ProfileStackHeader } from "../components/ProfileStackHeader";
 import { getActivityIcon, getActivityColor } from "../constants/activity";
 import { timeAgo } from "../utils/format";
 import type { RootStackParamList } from "../types/navigation";
@@ -27,6 +28,7 @@ export default function ActivityDetailScreen(): React.ReactElement {
 
   return (
     <View style={styles.container}>
+      <ProfileStackHeader title="Activity" />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}

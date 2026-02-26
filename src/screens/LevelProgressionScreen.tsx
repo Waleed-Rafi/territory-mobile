@@ -10,6 +10,7 @@ import { supabase } from "../supabase/client";
 import { colors, radius, spacing, typography } from "../theme";
 import type { RootStackParamList } from "../types/navigation";
 import type { ProfileDisplay } from "../types/domain";
+import { ProfileStackHeader } from "../components/ProfileStackHeader";
 import { parseProfileLevelSelect } from "../types/supabase-responses";
 import { strings } from "../l10n/strings";
 import {
@@ -74,6 +75,7 @@ export default function LevelProgressionScreen(): React.ReactElement {
 
   return (
     <View style={styles.container}>
+      <ProfileStackHeader title="Level progression" />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}

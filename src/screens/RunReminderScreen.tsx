@@ -6,11 +6,11 @@ import {
   StyleSheet,
   ScrollView,
   Switch,
-  Platform,
 } from "react-native";
 import { BlurView } from "expo-blur";
-import { Bell, ChevronLeft } from "lucide-react-native";
+import { Bell } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
+import { ProfileStackHeader } from "../components/ProfileStackHeader";
 import { useAlert } from "../contexts/AlertContext";
 import { getRunSchedule, setRunSchedule } from "../utils/runScheduleStorage";
 import {
@@ -96,12 +96,7 @@ export default function RunReminderScreen(): React.ReactElement {
   if (schedule === null) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <ChevronLeft size={24} stroke={colors.foreground} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Run reminders</Text>
-        </View>
+        <ProfileStackHeader title="Run reminders" />
         <View style={[styles.centered, styles.loadingRow]}>
           <Loader type="dots" color={colors.primary} />
           <Text style={styles.loadingText}>Loading…</Text>
@@ -121,13 +116,7 @@ export default function RunReminderScreen(): React.ReactElement {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <ChevronLeft size={24} stroke={colors.foreground} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Run reminders</Text>
-      </View>
-
+      <ProfileStackHeader title="Run reminders" />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
@@ -206,23 +195,6 @@ export default function RunReminderScreen(): React.ReactElement {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingTop: Platform.OS === "ios" ? 56 : 48,
-    paddingBottom: spacing.md,
-    paddingHorizontal: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.glassBorder,
-  },
-  backButton: { padding: spacing.sm, marginRight: spacing.xs },
-  headerTitle: {
-    fontFamily: typography.display,
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.foreground,
-    letterSpacing: 1,
-  },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   loadingRow: { flexDirection: "row", gap: spacing.sm, alignItems: "center" },
   loadingText: { fontSize: 14, color: colors.mutedForeground },

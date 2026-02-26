@@ -1,18 +1,18 @@
 import React from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { ProfileStackHeader } from "../components/ProfileStackHeader";
 import { colors, spacing, typography } from "../theme";
 
 export default function TermsScreen(): React.ReactElement {
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      <Text style={styles.title}>Terms and Conditions</Text>
-      <Text style={styles.updated}>Last updated: February 2025</Text>
-
-      <Text style={styles.heading}>1. Acceptance of Terms</Text>
+    <View style={styles.container}>
+      <ProfileStackHeader title="Terms and Conditions" />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+      <Text style={[styles.heading, styles.headingFirst]}>1. Acceptance of Terms</Text>
       <Text style={styles.body}>
         By downloading, installing, or using the Territory app ("App"), you agree to be bound by these Terms and
         Conditions ("Terms"). If you do not agree, do not use the App. We may update these Terms; your continued
@@ -114,22 +114,18 @@ export default function TermsScreen(): React.ReactElement {
         provided in the App Store or Play Store listing, or within the About & Privacy screen in the App.
       </Text>
 
+      <Text style={styles.updated}>Last updated: February 2025</Text>
       <View style={styles.footer} />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, paddingBottom: spacing.xl },
-  title: {
-    fontFamily: typography.display,
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.foreground,
-    marginBottom: spacing.xs,
-  },
-  updated: { fontSize: 12, color: colors.mutedForeground, marginBottom: spacing.xl },
+  scroll: { flex: 1 },
+  content: { padding: spacing.lg, paddingBottom: spacing.lg },
+  updated: { fontSize: 12, color: colors.mutedForeground, marginTop: spacing.md, marginBottom: spacing.sm },
   heading: {
     fontFamily: typography.display,
     fontSize: 14,
@@ -138,11 +134,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
+  headingFirst: { marginTop: 0 },
   body: {
     fontSize: 14,
     color: colors.secondaryForeground,
     lineHeight: 22,
     marginBottom: spacing.sm,
   },
-  footer: { height: spacing.lg },
+  footer: { height: spacing.md },
 });

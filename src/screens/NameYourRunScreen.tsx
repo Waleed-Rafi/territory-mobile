@@ -14,6 +14,7 @@ import { useRoute, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as ImagePicker from "expo-image-picker";
 import { Camera, X } from "lucide-react-native";
+import { ProfileStackHeader } from "../components/ProfileStackHeader";
 import { useAuth } from "../contexts/AuthContext";
 import { useAlert } from "../contexts/AlertContext";
 import { supabase } from "../supabase/client";
@@ -160,8 +161,8 @@ export default function NameYourRunScreen(): React.ReactElement {
 
   return (
     <View style={styles.container}>
+      <ProfileStackHeader title="Name your run" />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Name your run</Text>
         <Text style={styles.subtitle}>Add a name, optional description and photos. Your route is saved below.</Text>
 
         <Text style={styles.label}>Name</Text>

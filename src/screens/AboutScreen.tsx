@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking } from "react-native";
+import { ProfileStackHeader } from "../components/ProfileStackHeader";
 import { useAuth } from "../contexts/AuthContext";
 import { useAlert } from "../contexts/AlertContext";
 import { supabase } from "../supabase/client";
@@ -36,11 +37,13 @@ export default function AboutScreen(): React.ReactElement {
   const appVersion = Constants.expoConfig?.version ?? "1.0.0";
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={styles.container}>
+      <ProfileStackHeader title="About & Privacy" />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
       <Text style={styles.appName}>Territory</Text>
       <Text style={styles.tagline}>Run. Claim. Defend.</Text>
       <Text style={styles.version}>Version {appVersion}</Text>
@@ -135,11 +138,13 @@ export default function AboutScreen(): React.ReactElement {
 
       <View style={styles.footer} />
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  scroll: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: spacing.xl },
   appName: {
     fontFamily: typography.display,
