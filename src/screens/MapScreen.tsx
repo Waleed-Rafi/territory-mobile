@@ -285,14 +285,6 @@ export default function MapScreen(): React.ReactElement {
         >
           <Text style={styles.primaryButtonText}>START RUN</Text>
         </TouchableOpacity>
-        <View style={styles.secondaryRow}>
-          <BlurView intensity={70} tint="dark" style={styles.secondaryButton}>
-            <Text style={styles.attackText}>ATTACK</Text>
-          </BlurView>
-          <BlurView intensity={70} tint="dark" style={styles.secondaryButton}>
-            <Text style={styles.defendText}>DEFEND</Text>
-          </BlurView>
-        </View>
       </View>
     </View>
   );
@@ -311,7 +303,7 @@ const styles = StyleSheet.create({
   loadingText: { color: colors.mutedForeground, fontSize: 14 },
   header: {
     position: "absolute",
-    top: 56,
+    top: 72,
     left: spacing.lg,
     right: spacing.lg,
     flexDirection: "row",
@@ -345,7 +337,7 @@ const styles = StyleSheet.create({
   zonesText: { fontSize: 12, color: colors.secondaryForeground },
   legend: {
     position: "absolute",
-    bottom: 220,
+    bottom: 100 + 62 + spacing.lg,
     left: spacing.lg,
   },
   glassLegend: {
@@ -360,7 +352,7 @@ const styles = StyleSheet.create({
   legendLabel: { fontSize: 11, color: colors.secondaryForeground },
   stats: {
     position: "absolute",
-    bottom: 220,
+    bottom: 100 + 62 + spacing.lg,
     right: spacing.lg,
   },
   glassStats: {
@@ -403,18 +395,6 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     color: colors.primaryForeground,
   },
-  secondaryRow: { flexDirection: "row", gap: 12, marginTop: 12, width: "100%", maxWidth: 320 },
-  secondaryButton: {
-    flex: 1,
-    overflow: "hidden",
-    borderRadius: radius.lg,
-    paddingVertical: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.glassBorder,
-  },
-  attackText: { fontFamily: typography.display, fontSize: 12, fontWeight: "600", color: colors.enemy },
-  defendText: { fontFamily: typography.display, fontSize: 12, fontWeight: "600", color: colors.primary },
   myLocationButton: {
     position: "absolute",
     top: 120,
