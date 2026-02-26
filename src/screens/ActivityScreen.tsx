@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, RefreshControl } from "react-native";
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
 import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
@@ -52,26 +52,30 @@ export default function ActivityScreen(): React.ReactElement {
   const rootNav = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
   const [activities, setActivities] = useState<ActivityDisplay[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadActivities = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("activities")
+      .select("id, type, title, description, is_urgent, created_at, run_id, runs(name, description, photo_urls, route_polyline)")
+      .or(`user_id.eq.${user.id},target_user_id.eq.${user.id}`)
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (data) {
+      const list = (data as Array<Record<string, unknown>>).map((row) => {
+        const run = row.runs ? normalizeRun(row.runs) : null;
+        const { runs: _, ...rest } = row;
+        return { ...rest, run } as ActivityDisplay;
+      });
+      setActivities(list);
+    }
+    setLoading(false);
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
-    let cancelled = false;
-    void (async () => {
-      const { data } = await supabase
-        .from("activities")
-        .select("id, type, title, description, is_urgent, created_at, run_id, runs(name, description, photo_urls, route_polyline)")
-        .or(`user_id.eq.${user.id},target_user_id.eq.${user.id}`)
-        .order("created_at", { ascending: false })
-        .limit(30);
-      if (!cancelled && data) {
-        const list = (data as Array<Record<string, unknown>>).map((row) => {
-          const run = row.runs ? normalizeRun(row.runs) : null;
-          const { runs: _, ...rest } = row;
-          return { ...rest, run } as ActivityDisplay;
-        });
-        setActivities(list);
-      }
-      if (!cancelled) setLoading(false);
-    })();
+    void loadActivities();
     const channel = supabase
       .channel("activities-realtime")
       .on(
@@ -83,11 +87,14 @@ export default function ActivityScreen(): React.ReactElement {
         }
       )
       .subscribe();
-    return () => {
-      cancelled = true;
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
+    return () => { supabase.removeChannel(channel); };
+  }, [user, loadActivities]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadActivities();
+    setRefreshing(false);
+  }, [loadActivities]);
 
   const renderItem = ({ item }: { item: ActivityDisplay }): React.ReactElement => {
     const Icon = getActivityIcon(item.type);
@@ -153,27 +160,39 @@ export default function ActivityScreen(): React.ReactElement {
     );
   };
 
+  const listEmpty = (
+    loading ? (
+      <View style={styles.placeholder}>
+        <Loader type="skeleton" style={styles.skeletonWrap} />
+        <Text style={styles.placeholderText}>Loading…</Text>
+      </View>
+    ) : (
+      <BlurView intensity={70} tint="dark" style={styles.empty}>
+        <Text style={styles.emptyText}>No activity yet. Start running to see your feed!</Text>
+      </BlurView>
+    )
+  );
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>ACTIVITY</Text>
-      {loading ? (
-        <View style={styles.placeholder}>
-          <Loader type="skeleton" style={styles.skeletonWrap} />
-          <Text style={styles.placeholderText}>Loading…</Text>
-        </View>
-      ) : activities.length === 0 ? (
-        <BlurView intensity={70} tint="dark" style={styles.empty}>
-          <Text style={styles.emptyText}>No activity yet. Start running to see your feed!</Text>
-        </BlurView>
-      ) : (
-        <FlatList
-          data={activities}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+      <FlatList
+        data={activities}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={[styles.list, activities.length === 0 && styles.listEmpty]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+            progressBackgroundColor={colors.secondary}
+          />
+        }
+        ListEmptyComponent={listEmpty}
+      />
     </View>
   );
 }
@@ -189,6 +208,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   list: { paddingBottom: 100 },
+  listEmpty: { flexGrow: 1 },
   card: {
     overflow: "hidden",
     borderRadius: radius.lg,

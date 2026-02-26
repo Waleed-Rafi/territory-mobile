@@ -9,6 +9,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
 } from "react-native";
 import { Shield, Flame, MapPin, TrendingUp, LogOut, Bell, ChevronRight, Trophy, Target, Calendar, FileText, Info, Zap } from "lucide-react-native";
 import { BlurView } from "expo-blur";
@@ -39,6 +40,7 @@ export default function ProfileScreen(): React.ReactElement {
   const [profile, setProfile] = useState<ProfileDisplay | null>(null);
   const [runsForStats, setRunsForStats] = useState<{ started_at: string; distance: number }[]>([]);
   const [weeklyGoalKm, setWeeklyGoalKmState] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
   const [goalModalVisible, setGoalModalVisible] = useState(false);
   const [goalInput, setGoalInput] = useState("");
 
@@ -72,6 +74,15 @@ export default function ProfileScreen(): React.ReactElement {
     loadRunsForStats();
     getWeeklyGoalKm().then(setWeeklyGoalKmState);
   }, [user, loadProfile, loadRunsForStats]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadProfile();
+    await loadRunsForStats();
+    const goal = await getWeeklyGoalKm();
+    setWeeklyGoalKmState(goal);
+    setRefreshing(false);
+  }, [loadProfile, loadRunsForStats]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -135,6 +146,15 @@ export default function ProfileScreen(): React.ReactElement {
       style={styles.container}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.primary}
+          colors={[colors.primary]}
+          progressBackgroundColor={colors.secondary}
+        />
+      }
     >
       <View style={styles.avatarWrap}>
         <View style={styles.avatar}>
@@ -333,7 +353,7 @@ export default function ProfileScreen(): React.ReactElement {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: spacing.lg, paddingTop: 56, paddingBottom: 100 },
+  content: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingTop: 56, paddingBottom: 100 },
   avatarWrap: { alignItems: "center", marginBottom: spacing["2xl"] },
   avatar: {
     width: 80,
