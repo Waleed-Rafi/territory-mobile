@@ -26,6 +26,7 @@ import {
   formatPace,
 } from "../lib/gps";
 import { colors, radius, spacing, typography } from "../theme";
+import { strings } from "../l10n/strings";
 import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -220,7 +221,7 @@ export default function RunScreen(): React.ReactElement {
         </MapView>
         {!tracking && (
           <View style={styles.mapOverlay} pointerEvents="none">
-            <Text style={styles.mapOverlayText}>Start run to track your route</Text>
+            <Text style={styles.mapOverlayText}>{strings.run.startToTrack}</Text>
           </View>
         )}
         {tracking && (
@@ -285,7 +286,7 @@ export default function RunScreen(): React.ReactElement {
           ]}
           activeOpacity={0.9}
           accessibilityRole="button"
-          accessibilityLabel={saving ? "Saving run" : tracking ? "Stop run" : "Start run"}
+          accessibilityLabel={saving ? strings.run.savingRunA11y : tracking ? strings.run.stopRunA11y : strings.run.startRunA11y}
         >
           {saving ? (
             <Loader type="spinner" color={colors.primaryForeground} />
@@ -296,14 +297,13 @@ export default function RunScreen(): React.ReactElement {
           )}
         </TouchableOpacity>
         <Text style={styles.mainButtonLabel}>
-          {saving ? "Saving run..." : tracking ? "Tap to finish" : "Start Run"}
+          {saving ? `${strings.run.savingRun}…` : tracking ? strings.run.tapToFinish : strings.run.startRun}
         </Text>
 
         {!tracking && !saving && (
           <BlurView intensity={70} tint="dark" style={styles.tipCard}>
             <Text style={styles.tipText}>
-              Run a closed loop of at least <Text style={styles.tipBold}>100m</Text> to claim
-              territory. Your route becomes your domain.
+              {strings.run.tipLoop("100m")}
             </Text>
           </BlurView>
         )}

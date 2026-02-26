@@ -20,6 +20,7 @@ import {
 } from "../utils/runReminders";
 import { Loader } from "../components/Loaders";
 import { colors, radius, spacing, typography } from "../theme";
+import { strings } from "../l10n/strings";
 import { DAY_LABELS, type RunSchedule } from "../types/runSchedule";
 
 function formatTime(hour: number, minute: number): string {
@@ -184,18 +185,18 @@ export default function RunReminderScreen(): React.ReactElement {
         <TouchableOpacity
           onPress={handleSave}
           accessibilityRole="button"
-          accessibilityLabel="Save reminders"
+          accessibilityLabel={strings.reminders.saveRemindersA11y}
           disabled={saving}
           style={[styles.saveButton, saving && styles.saveButtonDisabled]}
           activeOpacity={0.9}
         >
           {saving ? (
             <View style={styles.saveButtonContent}>
-              <Text style={styles.saveButtonText}>Saving</Text>
+              <Text style={styles.saveButtonText}>{strings.reminders.saving}</Text>
               <Loader type="dots" color={colors.primaryForeground} style={styles.saveButtonDots} />
             </View>
           ) : (
-            <Text style={styles.saveButtonText}>Save reminders</Text>
+            <Text style={styles.saveButtonText}>{strings.reminders.saveReminders}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

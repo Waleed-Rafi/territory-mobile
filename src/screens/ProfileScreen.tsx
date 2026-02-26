@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Shield, Flame, MapPin, TrendingUp, LogOut, Bell, ChevronRight, Trophy, Target, Calendar, FileText, Info, Zap } from "lucide-react-native";
 import { BlurView } from "expo-blur";
+import { GlassCard } from "../components/GlassCard";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../types/navigation";
@@ -22,6 +23,7 @@ import { supabase } from "../supabase/client";
 import { formatDistance } from "../lib/gps";
 import { colors, radius, spacing, typography } from "../theme";
 import type { ProfileDisplay } from "../types/domain";
+import { parseProfileSelect, parseRunStatsRows } from "../types/supabase-responses";
 import { getWeeklyGoalKm, setWeeklyGoalKm } from "../utils/weeklyGoalStorage";
 import {
   getRunDates,
@@ -32,6 +34,7 @@ import {
   statsInPeriod,
 } from "../utils/streaks";
 import { computeXp, getLevelFromXp } from "../constants/levels";
+import { strings } from "../l10n/strings";
 
 const NINETY_DAYS_AGO = new Date(Date.now() - 90 * 864e5).toISOString();
 
@@ -58,10 +61,11 @@ export default function ProfileScreen(): React.ReactElement {
       .eq("user_id", user.id)
       .single();
     if (error) {
-      alert.show("Error", error.message || "Failed to load profile.");
+      alert.show(strings.common.error, error.message || strings.errors.loadProfile);
       return;
     }
-    if (data) setProfile(data as ProfileDisplay);
+    const parsed = data != null ? parseProfileSelect(data) : null;
+    if (parsed) setProfile(parsed);
   }, [user, alert]);
 
   const loadRunsForStats = useCallback(async () => {
@@ -72,10 +76,10 @@ export default function ProfileScreen(): React.ReactElement {
       .eq("user_id", user.id)
       .gte("started_at", NINETY_DAYS_AGO);
     if (error) {
-      alert.show("Error", error.message || "Failed to load run stats.");
+      alert.show(strings.common.error, error.message || strings.errors.loadRunStats);
       return;
     }
-    if (data) setRunsForStats(data as { started_at: string; distance: number }[]);
+    setRunsForStats(parseRunStatsRows(data ?? undefined));
   }, [user, alert]);
 
   useEffect(() => {
@@ -160,6 +164,7 @@ export default function ProfileScreen(): React.ReactElement {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
+          title={strings.common.refreshing}
           tintColor={colors.primary}
           colors={[colors.primary]}
           progressBackgroundColor={colors.secondary}
@@ -173,15 +178,15 @@ export default function ProfileScreen(): React.ReactElement {
           </Text>
         </View>
         <Text style={styles.displayName}>
-          {profile?.display_name || profile?.username || "Runner"}
+          {profile?.display_name || profile?.username || strings.profile.runner}
         </Text>
-        <Text style={styles.city}>{profile?.city || "Location not set"}</Text>
+        <Text style={styles.city}>{profile?.city || strings.profile.locationNotSet}</Text>
         <TouchableOpacity
           style={styles.levelRow}
           onPress={() => rootNav?.navigate("LevelProgression", { profile: profile ?? undefined })}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel={`Level ${displayLevel}. Tap to view level details and progress.`}
+          accessibilityLabel={strings.profile.levelLabel(displayLevel)}
         >
           <Shield size={12} stroke={colors.primary} />
           <Text style={styles.levelText}>LEVEL {displayLevel}</Text>
@@ -191,22 +196,22 @@ export default function ProfileScreen(): React.ReactElement {
 
       <View style={styles.statsGrid}>
         {stats.map((s) => (
-          <BlurView key={s.label} intensity={70} tint="dark" style={styles.statCard}>
+          <GlassCard key={s.label} style={styles.statCard}>
             <s.icon size={16} stroke={colors.primary} style={styles.statIcon} />
             <Text style={styles.statValue}>{s.value}</Text>
             <Text style={styles.statLabel}>{s.label}</Text>
-          </BlurView>
+          </GlassCard>
         ))}
       </View>
 
       {currentStreak > 0 && (
-        <BlurView intensity={70} tint="dark" style={styles.streakCard}>
+        <GlassCard style={styles.streakCard}>
           <Flame size={20} stroke={colors.primary} />
           <View style={styles.streakTextWrap}>
             <Text style={styles.streakTitle}>{currentStreak} day streak</Text>
             <Text style={styles.streakSub}>Longest: {longestStreak} days</Text>
           </View>
-        </BlurView>
+        </GlassCard>
       )}
 
       <TouchableOpacity
@@ -214,20 +219,20 @@ export default function ProfileScreen(): React.ReactElement {
         style={styles.remindersRow}
         activeOpacity={0.8}
         accessibilityRole="button"
-        accessibilityLabel="Weekly goal. Tap to set or change your weekly distance target."
+        accessibilityLabel={strings.profile.weeklyGoalA11y}
       >
-        <BlurView intensity={70} tint="dark" style={styles.remindersCard}>
+        <GlassCard style={styles.remindersCard}>
           <Target size={18} stroke={colors.primary} style={styles.remindersIcon} />
           <View style={styles.remindersTextWrap}>
-            <Text style={styles.remindersTitle}>Weekly goal</Text>
+            <Text style={styles.remindersTitle}>{strings.profile.weeklyGoal}</Text>
             <Text style={styles.remindersSub}>
               {weeklyGoalKm > 0
-                ? `This week: ${thisWeek.distanceKm.toFixed(1)} / ${weeklyGoalKm} km · ${thisWeek.runCount} runs`
-                : "Set a distance target to stay motivated"}
+                ? strings.profile.weeklyGoalProgress(thisWeek.distanceKm, weeklyGoalKm, thisWeek.runCount)
+                : strings.profile.weeklyGoalHint}
             </Text>
           </View>
           <ChevronRight size={20} stroke={colors.mutedForeground} />
-        </BlurView>
+        </GlassCard>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -235,48 +240,48 @@ export default function ProfileScreen(): React.ReactElement {
         style={styles.remindersRow}
         activeOpacity={0.8}
         accessibilityRole="button"
-        accessibilityLabel="Run reminders. Tap to set days and time for run reminders."
+        accessibilityLabel={strings.profile.runRemindersA11y}
       >
-        <BlurView intensity={70} tint="dark" style={styles.remindersCard}>
+        <GlassCard style={styles.remindersCard}>
           <Bell size={18} stroke={colors.primary} style={styles.remindersIcon} />
           <View style={styles.remindersTextWrap}>
-            <Text style={styles.remindersTitle}>Run reminders</Text>
-            <Text style={styles.remindersSub}>Set days & time to build a habit</Text>
+            <Text style={styles.remindersTitle}>{strings.profile.runReminders}</Text>
+            <Text style={styles.remindersSub}>{strings.profile.runRemindersHint}</Text>
           </View>
           <ChevronRight size={20} stroke={colors.mutedForeground} />
-        </BlurView>
+        </GlassCard>
       </TouchableOpacity>
 
       <View style={styles.remindersRow}>
-        <BlurView intensity={70} tint="dark" style={[styles.remindersCard, styles.leaderboardCard]}>
+        <GlassCard style={[styles.remindersCard, styles.leaderboardCard]}>
           <Trophy size={18} stroke={colors.mutedForeground} style={styles.remindersIcon} />
           <View style={styles.remindersTextWrap}>
-            <Text style={[styles.remindersTitle, styles.leaderboardTitle]}>Leaderboard</Text>
-            <Text style={styles.remindersSub}>Compete with other runners</Text>
+            <Text style={[styles.remindersTitle, styles.leaderboardTitle]}>{strings.profile.leaderboard}</Text>
+            <Text style={styles.remindersSub}>{strings.profile.leaderboardHint}</Text>
           </View>
           <View style={styles.comingSoonChip}>
-            <Text style={styles.comingSoonText}>Coming soon</Text>
+            <Text style={styles.comingSoonText}>{strings.profile.comingSoon}</Text>
           </View>
-        </BlurView>
+        </GlassCard>
       </View>
 
       <View style={styles.periodRow}>
-        <BlurView intensity={70} tint="dark" style={styles.periodCard}>
-          <Text style={styles.periodLabel}>This week</Text>
+        <GlassCard style={styles.periodCard}>
+          <Text style={styles.periodLabel}>{strings.profile.thisWeek}</Text>
           <Text style={styles.periodValue}>{thisWeek.distanceKm.toFixed(1)} km</Text>
-          <Text style={styles.periodSub}>{thisWeek.runCount} runs</Text>
-        </BlurView>
-        <BlurView intensity={70} tint="dark" style={styles.periodCard}>
-          <Text style={styles.periodLabel}>This month</Text>
+          <Text style={styles.periodSub}>{thisWeek.runCount} {strings.profile.runs}</Text>
+        </GlassCard>
+        <GlassCard style={styles.periodCard}>
+          <Text style={styles.periodLabel}>{strings.profile.thisMonth}</Text>
           <Text style={styles.periodValue}>{thisMonth.distanceKm.toFixed(1)} km</Text>
-          <Text style={styles.periodSub}>{thisMonth.runCount} runs</Text>
-        </BlurView>
+          <Text style={styles.periodSub}>{thisMonth.runCount} {strings.profile.runs}</Text>
+        </GlassCard>
       </View>
 
       <View style={styles.calendarWrap}>
         <View style={styles.calendarHeader}>
           <Calendar size={14} stroke={colors.mutedForeground} />
-          <Text style={styles.calendarTitle}>Last 5 weeks</Text>
+          <Text style={styles.calendarTitle}>{strings.profile.last5Weeks}</Text>
         </View>
         <View style={styles.calendarRows}>
           {calendarWeeks.map((week, wIdx) => (
@@ -306,14 +311,14 @@ export default function ProfileScreen(): React.ReactElement {
         accessibilityRole="button"
         accessibilityLabel="Terms and Conditions"
       >
-        <BlurView intensity={70} tint="dark" style={styles.remindersCard}>
+        <GlassCard style={styles.remindersCard}>
           <FileText size={18} stroke={colors.primary} style={styles.remindersIcon} />
           <View style={styles.remindersTextWrap}>
-            <Text style={styles.remindersTitle}>Terms and Conditions</Text>
-            <Text style={styles.remindersSub}>Read our terms of use</Text>
+            <Text style={styles.remindersTitle}>{strings.profile.terms}</Text>
+            <Text style={styles.remindersSub}>{strings.profile.termsHint}</Text>
           </View>
           <ChevronRight size={20} stroke={colors.mutedForeground} />
-        </BlurView>
+        </GlassCard>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -323,14 +328,14 @@ export default function ProfileScreen(): React.ReactElement {
         accessibilityRole="button"
         accessibilityLabel="About and Privacy"
       >
-        <BlurView intensity={70} tint="dark" style={styles.remindersCard}>
+        <GlassCard style={styles.remindersCard}>
           <Info size={18} stroke={colors.primary} style={styles.remindersIcon} />
           <View style={styles.remindersTextWrap}>
-            <Text style={styles.remindersTitle}>About & Privacy</Text>
-            <Text style={styles.remindersSub}>App info and privacy policy</Text>
+            <Text style={styles.remindersTitle}>{strings.profile.about}</Text>
+            <Text style={styles.remindersSub}>{strings.profile.aboutHint}</Text>
           </View>
           <ChevronRight size={20} stroke={colors.mutedForeground} />
-        </BlurView>
+        </GlassCard>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -338,11 +343,11 @@ export default function ProfileScreen(): React.ReactElement {
         style={styles.signOutButton}
         activeOpacity={0.8}
         accessibilityRole="button"
-        accessibilityLabel="Sign out"
+        accessibilityLabel={strings.profile.signOut}
       >
         <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} />
         <LogOut size={16} stroke={colors.destructive} />
-        <Text style={styles.signOutText}>Sign Out</Text>
+        <Text style={styles.signOutText}>{strings.profile.signOut}</Text>
       </TouchableOpacity>
 
       <Modal

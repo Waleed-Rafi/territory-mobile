@@ -16,6 +16,7 @@ import * as WebBrowser from "expo-web-browser";
 import { supabase } from "../supabase/client";
 import { useAlert } from "../contexts/AlertContext";
 import { colors, radius, spacing, typography } from "../theme";
+import { strings } from "../l10n/strings";
 
 export interface AuthScreenProps {
   onAuthSuccess: () => void;
@@ -158,7 +159,7 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps): React.Re
         <TouchableOpacity
           onPress={handleSubmit}
           accessibilityRole="button"
-          accessibilityLabel={isLogin ? "Sign in" : "Sign up"}
+          accessibilityLabel={isLogin ? strings.auth.signInA11y : strings.auth.signUpA11y}
           disabled={loading}
           style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
           activeOpacity={0.9}
@@ -181,7 +182,7 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps): React.Re
         <TouchableOpacity
           onPress={handleGoogleSignIn}
           accessibilityRole="button"
-          accessibilityLabel="Sign in with Google"
+          accessibilityLabel={strings.auth.signInWithGoogle}
           style={styles.googleButton}
           activeOpacity={0.9}
         >

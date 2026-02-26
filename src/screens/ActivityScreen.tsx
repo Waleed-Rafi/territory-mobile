@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from "react-native";
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
-import { BlurView } from "expo-blur";
+import { GlassCard } from "../components/GlassCard";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuth } from "../contexts/AuthContext";
@@ -9,40 +9,26 @@ import { useAlert } from "../contexts/AlertContext";
 import { supabase } from "../supabase/client";
 import { Loader } from "../components/Loaders";
 import { colors, radius, spacing, typography } from "../theme";
-import type { ActivityDisplay, RunSummary } from "../types/domain";
+import type { ActivityDisplay } from "../types/domain";
+import { parseActivityList } from "../types/supabase-responses";
 import type { RootStackParamList } from "../types/navigation";
 import { RunPhotoThumbnail } from "../components/RunPhotoThumbnail";
 import { polylineToMapRegion } from "../lib/gps";
 import { getActivityIcon, getActivityColor } from "../constants/activity";
 import { timeAgo } from "../utils/format";
+import { strings } from "../l10n/strings";
 
 const ACTIVITY_FEED_PAGE_SIZE = 30;
 
-/** Normalize run from Supabase join (can be object or null). */
-function normalizeRun(r: unknown): RunSummary | null {
-  if (!r || typeof r !== "object") return null;
-  const o = r as Record<string, unknown>;
-  const photoUrls = o.photo_urls as string[] | unknown;
-  const arr = Array.isArray(photoUrls) ? photoUrls : [];
-  const poly = o.route_polyline as [number, number][] | unknown;
-  const routePolyline = Array.isArray(poly) ? poly : null;
+/** Normalize raw activity row from realtime (no runs join). */
+function normalizeRealtimeActivity(row: Record<string, unknown>): ActivityDisplay {
   return {
-    name: (o.name as string | null) ?? null,
-    description: (o.description as string | null) ?? null,
-    photo_urls: arr.length ? arr : null,
-    route_polyline: routePolyline,
-  };
-}
-
-/** Normalize raw activity row (e.g. from realtime) to ActivityDisplay (no runs join). */
-function normalizeActivityRow(row: Record<string, unknown>): ActivityDisplay {
-  return {
-    id: (row.id as string) ?? "",
-    type: (row.type as string) ?? "run_completed",
-    title: (row.title as string) ?? "",
+    id: String(row.id ?? ""),
+    type: String(row.type ?? "run_completed"),
+    title: String(row.title ?? ""),
     description: (row.description as string | null) ?? null,
     is_urgent: Boolean(row.is_urgent),
-    created_at: (row.created_at as string) ?? new Date().toISOString(),
+    created_at: String(row.created_at ?? new Date().toISOString()),
     run_id: (row.run_id as string | null) ?? null,
     run: null,
   };
@@ -66,18 +52,11 @@ export default function ActivityScreen(): React.ReactElement {
       .order("created_at", { ascending: false })
       .limit(ACTIVITY_FEED_PAGE_SIZE);
     if (error) {
-      alert.show("Error", error.message || "Failed to load activity.");
+      alert.show(strings.common.error, error.message || strings.errors.loadActivity);
       setLoading(false);
       return;
     }
-    if (data) {
-      const list = (data as Array<Record<string, unknown>>).map((row) => {
-        const run = row.runs ? normalizeRun(row.runs) : null;
-        const { runs: _, ...rest } = row;
-        return { ...rest, run } as ActivityDisplay;
-      });
-      setActivities(list);
-    }
+    setActivities(parseActivityList(data ?? undefined));
     setLoading(false);
   }, [user, alert]);
 
@@ -91,7 +70,7 @@ export default function ActivityScreen(): React.ReactElement {
         { event: "INSERT", schema: "public", table: "activities" },
         (payload) => {
           const raw = payload.new as Record<string, unknown>;
-          const newActivity = normalizeActivityRow(raw);
+          const newActivity = normalizeRealtimeActivity(raw);
           setActivities((prev) => [newActivity, ...prev]);
         }
       )
@@ -120,11 +99,9 @@ export default function ActivityScreen(): React.ReactElement {
         activeOpacity={0.85}
         onPress={() => rootNav?.navigate("ActivityDetail", { activity: item })}
         accessibilityRole="button"
-        accessibilityLabel={`${item.title}. Tap to view details.`}
+        accessibilityLabel={strings.activity.tapToViewDetails(item.title)}
       >
-        <BlurView
-          intensity={70}
-          tint="dark"
+        <GlassCard
           style={[styles.card, item.is_urgent && styles.cardUrgent]}
         >
           <View style={styles.cardIcon}>
@@ -158,7 +135,7 @@ export default function ActivityScreen(): React.ReactElement {
             ) : null}
           </View>
           <Text style={styles.cardTime}>{timeAgo(item.created_at)}</Text>
-        </BlurView>
+        </GlassCard>
       </TouchableOpacity>
     );
   };
@@ -167,18 +144,18 @@ export default function ActivityScreen(): React.ReactElement {
     loading ? (
       <View style={styles.placeholder}>
         <Loader type="skeleton" style={styles.skeletonWrap} />
-        <Text style={styles.placeholderText}>Loading…</Text>
+        <Text style={styles.placeholderText}>{strings.common.loading}</Text>
       </View>
     ) : (
-      <BlurView intensity={70} tint="dark" style={styles.empty}>
-        <Text style={styles.emptyText}>No activity yet. Start running to see your feed!</Text>
-      </BlurView>
+<GlassCard style={styles.empty}>
+          <Text style={styles.emptyText}>{strings.activity.empty}</Text>
+        </GlassCard>
     )
   );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>ACTIVITY</Text>
+      <Text style={styles.header}>{strings.activity.title}</Text>
       <FlatList
         data={activities}
         renderItem={renderItem}
@@ -189,6 +166,7 @@ export default function ActivityScreen(): React.ReactElement {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
+            title={strings.common.refreshing}
             tintColor={colors.primary}
             colors={[colors.primary]}
             progressBackgroundColor={colors.secondary}

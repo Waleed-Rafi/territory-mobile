@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { BlurView } from "expo-blur";
+import { GlassCard } from "../components/GlassCard";
 import { useRoute, RouteProp } from "@react-navigation/native";
 import { Shield, TrendingUp, Flame, MapPin, ChevronRight, Target, Zap } from "lucide-react-native";
 import { useAuth } from "../contexts/AuthContext";
@@ -9,6 +10,8 @@ import { supabase } from "../supabase/client";
 import { colors, radius, spacing, typography } from "../theme";
 import type { RootStackParamList } from "../types/navigation";
 import type { ProfileDisplay } from "../types/domain";
+import { parseProfileLevelSelect } from "../types/supabase-responses";
+import { strings } from "../l10n/strings";
 import {
   LEVEL_TIERS,
   computeXp,
@@ -42,10 +45,11 @@ export default function LevelProgressionScreen(): React.ReactElement {
       .then(({ data, error }) => {
         if (cancelled) return;
         if (error) {
-          alert.show("Error", error.message || "Failed to load profile.");
+          alert.show(strings.common.error, error.message || strings.errors.loadProfile);
           return;
         }
-        if (data) setProfile(data as ProfileDisplay);
+        const parsed = data != null ? parseProfileLevelSelect(data) : null;
+        if (parsed) setProfile(parsed);
       });
     return () => { cancelled = true; };
   }, [user, profileParam, alert]);
@@ -92,7 +96,7 @@ export default function LevelProgressionScreen(): React.ReactElement {
 
         {/* Progress to next level */}
         {nextInfo && nextTier && (
-          <BlurView intensity={70} tint="dark" style={styles.card}>
+          <GlassCard style={styles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Progress to Level {nextInfo.nextLevel}</Text>
               <Text style={styles.cardSub}>
@@ -106,18 +110,18 @@ export default function LevelProgressionScreen(): React.ReactElement {
               <Text style={styles.progressLabel}>{xp} XP</Text>
               <Text style={styles.progressLabelNext}>{nextTier.name}</Text>
             </View>
-          </BlurView>
+          </GlassCard>
         )}
 
         {!nextInfo && tier && (
-          <BlurView intensity={70} tint="dark" style={styles.card}>
+          <GlassCard style={styles.card}>
             <Text style={styles.maxLevelTitle}>You've reached max level</Text>
             <Text style={styles.maxLevelSub}>{tier.name} — {tier.tagline}</Text>
-          </BlurView>
+          </GlassCard>
         )}
 
         {/* How you earn XP */}
-        <BlurView intensity={70} tint="dark" style={styles.card}>
+        <GlassCard style={styles.card}>
           <Text style={styles.sectionTitle}>How you earn XP</Text>
           <View style={styles.xpRow}>
             <TrendingUp size={18} stroke={colors.primary} />
@@ -134,10 +138,10 @@ export default function LevelProgressionScreen(): React.ReactElement {
             <Text style={styles.xpText}>Territories</Text>
             <Text style={styles.xpValue}>{XP_PER_TERRITORY} XP per territory</Text>
           </View>
-        </BlurView>
+        </GlassCard>
 
         {/* Your current XP breakdown */}
-        <BlurView intensity={70} tint="dark" style={styles.card}>
+        <GlassCard style={styles.card}>
           <Text style={styles.sectionTitle}>Your XP breakdown</Text>
           <View style={styles.breakdownRow}>
             <Text style={styles.breakdownLabel}>Distance</Text>
@@ -157,10 +161,10 @@ export default function LevelProgressionScreen(): React.ReactElement {
             <Text style={styles.breakdownTotalLabel}>Total</Text>
             <Text style={styles.breakdownTotalValue}>{xp} XP</Text>
           </View>
-        </BlurView>
+        </GlassCard>
 
         {/* Level up faster */}
-        <BlurView intensity={70} tint="dark" style={styles.card}>
+        <GlassCard style={styles.card}>
           <Text style={styles.sectionTitle}>Level up faster</Text>
           {tips.map((t, i) => (
             <View key={i} style={styles.tipRow}>
@@ -172,16 +176,16 @@ export default function LevelProgressionScreen(): React.ReactElement {
               <ChevronRight size={18} stroke={colors.mutedForeground} />
             </View>
           ))}
-        </BlurView>
+        </GlassCard>
 
         {/* Next level preview */}
         {nextTier && (
-          <BlurView intensity={70} tint="dark" style={styles.card}>
+          <GlassCard style={styles.card}>
             <Text style={styles.sectionTitle}>Next: Level {nextTier.level}</Text>
             <Text style={styles.nextLevelName}>{nextTier.name}</Text>
             <Text style={styles.nextLevelTagline}>{nextTier.tagline}</Text>
             <Text style={styles.nextLevelUnlock}>Unlock: {nextTier.unlock}</Text>
-          </BlurView>
+          </GlassCard>
         )}
 
         {/* All levels preview */}

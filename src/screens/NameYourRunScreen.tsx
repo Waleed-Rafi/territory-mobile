@@ -19,6 +19,7 @@ import { useAlert } from "../contexts/AlertContext";
 import { supabase } from "../supabase/client";
 import { Loader } from "../components/Loaders";
 import { colors, radius, spacing, typography } from "../theme";
+import { strings } from "../l10n/strings";
 import { polylineToMapRegion } from "../lib/gps";
 import type { RootStackParamList } from "../types/navigation";
 import type { ActivityInsert } from "../types/database";
@@ -221,7 +222,7 @@ export default function NameYourRunScreen(): React.ReactElement {
           onPress={handleSave}
           disabled={saving}
           accessibilityRole="button"
-          accessibilityLabel="Save run"
+          accessibilityLabel={strings.run.saveRun}
         >
           {saving ? (
             <Loader type="spinner" color={colors.primaryForeground} />

@@ -12,6 +12,12 @@ const SUPABASE_ANON_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_KEY ??
   "";
 
+if (__DEV__ && (!SUPABASE_URL.trim() || !SUPABASE_ANON_KEY.trim())) {
+  console.warn(
+    "[Supabase] Missing URL or anon key. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_KEY in .env or app config."
+  );
+}
+
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     storage: AsyncStorage,

@@ -9,6 +9,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../supabase/client";
 import { Loader } from "../components/Loaders";
 import { colors, radius, spacing, typography } from "../theme";
+import { strings } from "../l10n/strings";
 import type { TerritoryMapItem } from "../types/domain";
 import type { MapScreenNavigationProp } from "../types/navigation";
 
@@ -273,7 +274,7 @@ export default function MapScreen(): React.ReactElement {
         onPress={centerOnUser}
         style={styles.myLocationButton}
         accessibilityRole="button"
-        accessibilityLabel="Center map on my location"
+        accessibilityLabel={strings.map.myLocationA11y}
         activeOpacity={0.9}
       >
         <MapPin size={22} stroke={colors.primaryForeground} />
@@ -284,10 +285,10 @@ export default function MapScreen(): React.ReactElement {
           onPress={() => navigation.navigate("Run")}
           style={styles.primaryButton}
           accessibilityRole="button"
-          accessibilityLabel="Start run"
+          accessibilityLabel={strings.map.startRun}
           activeOpacity={0.9}
         >
-          <Text style={styles.primaryButtonText}>START RUN</Text>
+          <Text style={styles.primaryButtonText}>{strings.map.startRunButton}</Text>
         </TouchableOpacity>
       </View>
     </View>

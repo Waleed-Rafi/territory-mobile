@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
-import { BlurView } from "expo-blur";
+import { GlassCard } from "../components/GlassCard";
 import { useRoute, RouteProp } from "@react-navigation/native";
 import { colors, radius, spacing, typography } from "../theme";
 import { polylineToMapRegion } from "../lib/gps";
@@ -32,7 +32,7 @@ export default function ActivityDetailScreen(): React.ReactElement {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <BlurView intensity={70} tint="dark" style={[styles.card, activity.is_urgent && styles.cardUrgent]}>
+        <GlassCard style={[styles.card, activity.is_urgent && styles.cardUrgent]}>
           <View style={styles.headerRow}>
             <View style={styles.iconWrap}>
               <Icon size={24} color={color} />
@@ -45,28 +45,28 @@ export default function ActivityDetailScreen(): React.ReactElement {
           {activity.description ? (
             <Text style={styles.description}>{activity.description}</Text>
           ) : null}
-        </BlurView>
+        </GlassCard>
 
         {run ? (
           <>
             {(run.name || run.description) ? (
-              <BlurView intensity={70} tint="dark" style={styles.section}>
+              <GlassCard style={styles.section}>
                 {run.name ? <Text style={styles.runName}>{run.name}</Text> : null}
                 {run.description ? <Text style={styles.runDesc}>{run.description}</Text> : null}
-              </BlurView>
+              </GlassCard>
             ) : null}
             {run.photo_urls && run.photo_urls.length > 0 ? (
-              <BlurView intensity={70} tint="dark" style={styles.section}>
+              <GlassCard style={styles.section}>
                 <Text style={styles.sectionLabel}>Photos</Text>
                 <View style={styles.photoRow}>
                   {run.photo_urls.map((path, i) => (
                     <RunPhotoThumbnail key={i} path={path} size={100} />
                   ))}
                 </View>
-              </BlurView>
+              </GlassCard>
             ) : null}
             {mapRegion && routeCoords && routeCoords.length > 0 ? (
-              <BlurView intensity={70} tint="dark" style={styles.section}>
+              <GlassCard style={styles.section}>
                 <Text style={styles.sectionLabel}>Route</Text>
                 <View style={styles.mapWrap}>
                   <MapView
@@ -80,7 +80,7 @@ export default function ActivityDetailScreen(): React.ReactElement {
                     <Polyline coordinates={routeCoords} strokeColor={colors.primary} strokeWidth={4} />
                   </MapView>
                 </View>
-              </BlurView>
+              </GlassCard>
             ) : null}
           </>
         ) : null}
