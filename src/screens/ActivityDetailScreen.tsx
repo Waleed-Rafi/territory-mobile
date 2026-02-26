@@ -4,6 +4,7 @@ import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
 import { BlurView } from "expo-blur";
 import { useRoute, RouteProp } from "@react-navigation/native";
 import { colors, radius, spacing, typography } from "../theme";
+import { polylineToMapRegion } from "../lib/gps";
 import { RunPhotoThumbnail } from "../components/RunPhotoThumbnail";
 import { getActivityIcon, getActivityColor } from "../constants/activity";
 import { timeAgo } from "../utils/format";
@@ -19,15 +20,7 @@ export default function ActivityDetailScreen(): React.ReactElement {
   const routeCoords =
     run?.route_polyline?.length &&
     run.route_polyline.map(([lat, lng]) => ({ latitude: lat, longitude: lng }));
-  const mapRegion =
-    routeCoords && routeCoords.length
-      ? {
-          latitude: routeCoords.reduce((s, c) => s + c.latitude, 0) / routeCoords.length,
-          longitude: routeCoords.reduce((s, c) => s + c.longitude, 0) / routeCoords.length,
-          latitudeDelta: Math.max(0.01, (Math.max(...routeCoords.map((c) => c.latitude)) - Math.min(...routeCoords.map((c) => c.latitude))) * 1.8 || 0.01),
-          longitudeDelta: Math.max(0.01, (Math.max(...routeCoords.map((c) => c.longitude)) - Math.min(...routeCoords.map((c) => c.longitude))) * 1.8 || 0.01),
-        }
-      : null;
+  const mapRegion = run?.route_polyline?.length ? polylineToMapRegion(run.route_polyline, 1.8) : null;
 
   const Icon = getActivityIcon(activity.type);
   const color = getActivityColor(activity.type);

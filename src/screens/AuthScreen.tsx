@@ -157,6 +157,8 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps): React.Re
 
         <TouchableOpacity
           onPress={handleSubmit}
+          accessibilityRole="button"
+          accessibilityLabel={isLogin ? "Sign in" : "Sign up"}
           disabled={loading}
           style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
           activeOpacity={0.9}
@@ -178,6 +180,8 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps): React.Re
 
         <TouchableOpacity
           onPress={handleGoogleSignIn}
+          accessibilityRole="button"
+          accessibilityLabel="Sign in with Google"
           style={styles.googleButton}
           activeOpacity={0.9}
         >

@@ -121,6 +121,34 @@ export function formatPace(metersPerSecond: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
+/** Map region (center + deltas) for fitting a polyline in a MapView. */
+export interface MapRegion {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+}
+
+/** Compute a MapView region that fits the given polyline. paddingFactor (default 1.5) adds margin. */
+export function polylineToMapRegion(
+  polyline: [number, number][],
+  paddingFactor = 1.5
+): MapRegion | null {
+  if (!polyline?.length) return null;
+  const lats = polyline.map(([lat]) => lat);
+  const lngs = polyline.map(([, lng]) => lng);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+  return {
+    latitude: (minLat + maxLat) / 2,
+    longitude: (minLng + maxLng) / 2,
+    latitudeDelta: Math.max(0.01, (maxLat - minLat) * paddingFactor || 0.01),
+    longitudeDelta: Math.max(0.01, (maxLng - minLng) * paddingFactor || 0.01),
+  };
+}
+
 export function formatDistance(meters: number): string {
   if (meters < 1000) return `${Math.round(meters)} m`;
   return `${(meters / 1000).toFixed(2)} km`;

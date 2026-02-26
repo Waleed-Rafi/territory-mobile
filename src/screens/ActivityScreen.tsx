@@ -5,14 +5,18 @@ import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuth } from "../contexts/AuthContext";
+import { useAlert } from "../contexts/AlertContext";
 import { supabase } from "../supabase/client";
 import { Loader } from "../components/Loaders";
 import { colors, radius, spacing, typography } from "../theme";
 import type { ActivityDisplay, RunSummary } from "../types/domain";
 import type { RootStackParamList } from "../types/navigation";
 import { RunPhotoThumbnail } from "../components/RunPhotoThumbnail";
+import { polylineToMapRegion } from "../lib/gps";
 import { getActivityIcon, getActivityColor } from "../constants/activity";
 import { timeAgo } from "../utils/format";
+
+const ACTIVITY_FEED_PAGE_SIZE = 30;
 
 /** Normalize run from Supabase join (can be object or null). */
 function normalizeRun(r: unknown): RunSummary | null {
@@ -30,8 +34,23 @@ function normalizeRun(r: unknown): RunSummary | null {
   };
 }
 
+/** Normalize raw activity row (e.g. from realtime) to ActivityDisplay (no runs join). */
+function normalizeActivityRow(row: Record<string, unknown>): ActivityDisplay {
+  return {
+    id: (row.id as string) ?? "",
+    type: (row.type as string) ?? "run_completed",
+    title: (row.title as string) ?? "",
+    description: (row.description as string | null) ?? null,
+    is_urgent: Boolean(row.is_urgent),
+    created_at: (row.created_at as string) ?? new Date().toISOString(),
+    run_id: (row.run_id as string | null) ?? null,
+    run: null,
+  };
+}
+
 export default function ActivityScreen(): React.ReactElement {
   const { user } = useAuth();
+  const alert = useAlert();
   const navigation = useNavigation();
   const rootNav = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
   const [activities, setActivities] = useState<ActivityDisplay[]>([]);
@@ -40,12 +59,17 @@ export default function ActivityScreen(): React.ReactElement {
 
   const loadActivities = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("activities")
       .select("id, type, title, description, is_urgent, created_at, run_id, runs(name, description, photo_urls, route_polyline)")
       .or(`user_id.eq.${user.id},target_user_id.eq.${user.id}`)
       .order("created_at", { ascending: false })
-      .limit(30);
+      .limit(ACTIVITY_FEED_PAGE_SIZE);
+    if (error) {
+      alert.show("Error", error.message || "Failed to load activity.");
+      setLoading(false);
+      return;
+    }
     if (data) {
       const list = (data as Array<Record<string, unknown>>).map((row) => {
         const run = row.runs ? normalizeRun(row.runs) : null;
@@ -55,7 +79,7 @@ export default function ActivityScreen(): React.ReactElement {
       setActivities(list);
     }
     setLoading(false);
-  }, [user]);
+  }, [user, alert]);
 
   useEffect(() => {
     if (!user) return;
@@ -66,7 +90,8 @@ export default function ActivityScreen(): React.ReactElement {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "activities" },
         (payload) => {
-          const newActivity = payload.new as ActivityDisplay;
+          const raw = payload.new as Record<string, unknown>;
+          const newActivity = normalizeActivityRow(raw);
           setActivities((prev) => [newActivity, ...prev]);
         }
       )
@@ -87,21 +112,15 @@ export default function ActivityScreen(): React.ReactElement {
     const routeCoords =
       run?.route_polyline?.length &&
       run.route_polyline.map(([lat, lng]) => ({ latitude: lat, longitude: lng }));
-    const mapRegion =
-      routeCoords && routeCoords.length
-        ? {
-            latitude: (Math.min(...routeCoords.map((c) => c.latitude)) + Math.max(...routeCoords.map((c) => c.latitude))) / 2,
-            longitude: (Math.min(...routeCoords.map((c) => c.longitude)) + Math.max(...routeCoords.map((c) => c.longitude))) / 2,
-            latitudeDelta: Math.max(0.01, (Math.max(...routeCoords.map((c) => c.latitude)) - Math.min(...routeCoords.map((c) => c.latitude))) * 1.5 || 0.01),
-            longitudeDelta: Math.max(0.01, (Math.max(...routeCoords.map((c) => c.longitude)) - Math.min(...routeCoords.map((c) => c.longitude))) * 1.5 || 0.01),
-          }
-        : null;
+    const mapRegion = run?.route_polyline?.length ? polylineToMapRegion(run.route_polyline, 1.5) : null;
 
     return (
       <TouchableOpacity
         key={item.id}
         activeOpacity={0.85}
         onPress={() => rootNav?.navigate("ActivityDetail", { activity: item })}
+        accessibilityRole="button"
+        accessibilityLabel={`${item.title}. Tap to view details.`}
       >
         <BlurView
           intensity={70}

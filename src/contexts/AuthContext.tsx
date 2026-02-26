@@ -27,17 +27,22 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
     const applySession = async (session: Session | null) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("status")
-          .eq("user_id", session.user.id)
-          .single();
-        if (profile?.status === "inactive") {
-          await supabase.from("profiles").update({ status: "active" }).eq("user_id", session.user.id);
+      try {
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("status")
+            .eq("user_id", session.user.id)
+            .single();
+          if (profile?.status === "inactive") {
+            await supabase.from("profiles").update({ status: "active" }).eq("user_id", session.user.id);
+          }
         }
+      } catch {
+        // Profile fetch/update is non-blocking; session is still applied
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {

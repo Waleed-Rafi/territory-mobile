@@ -19,6 +19,7 @@ import { useAlert } from "../contexts/AlertContext";
 import { supabase } from "../supabase/client";
 import { Loader } from "../components/Loaders";
 import { colors, radius, spacing, typography } from "../theme";
+import { polylineToMapRegion } from "../lib/gps";
 import type { RootStackParamList } from "../types/navigation";
 import type { ActivityInsert } from "../types/database";
 import { ActivityType } from "../types/domain";
@@ -50,17 +51,10 @@ export default function NameYourRunScreen(): React.ReactElement {
       routePolyline.map(([lat, lng]) => ({ latitude: lat, longitude: lng })),
     [routePolyline]
   );
-  const mapRegion = useMemo(() => {
-    if (routeCoords.length === 0) return null;
-    const lats = routeCoords.map((c) => c.latitude);
-    const lngs = routeCoords.map((c) => c.longitude);
-    return {
-      latitude: (Math.min(...lats) + Math.max(...lats)) / 2,
-      longitude: (Math.min(...lngs) + Math.max(...lngs)) / 2,
-      latitudeDelta: Math.max(0.01, (Math.max(...lats) - Math.min(...lats)) * 1.5 || 0.01),
-      longitudeDelta: Math.max(0.01, (Math.max(...lngs) - Math.min(...lngs)) * 1.5 || 0.01),
-    };
-  }, [routeCoords]);
+  const mapRegion = useMemo(
+    () => polylineToMapRegion(routePolyline, 1.5),
+    [routePolyline]
+  );
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -226,6 +220,8 @@ export default function NameYourRunScreen(): React.ReactElement {
           style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
           onPress={handleSave}
           disabled={saving}
+          accessibilityRole="button"
+          accessibilityLabel="Save run"
         >
           {saving ? (
             <Loader type="spinner" color={colors.primaryForeground} />

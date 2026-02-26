@@ -183,6 +183,8 @@ export default function RunReminderScreen(): React.ReactElement {
 
         <TouchableOpacity
           onPress={handleSave}
+          accessibilityRole="button"
+          accessibilityLabel="Save reminders"
           disabled={saving}
           style={[styles.saveButton, saving && styles.saveButtonDisabled]}
           activeOpacity={0.9}

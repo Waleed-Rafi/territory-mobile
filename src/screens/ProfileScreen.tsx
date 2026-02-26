@@ -17,6 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../types/navigation";
 import { useAuth } from "../contexts/AuthContext";
+import { useAlert } from "../contexts/AlertContext";
 import { supabase } from "../supabase/client";
 import { formatDistance } from "../lib/gps";
 import { colors, radius, spacing, typography } from "../theme";
@@ -37,6 +38,7 @@ const NINETY_DAYS_AGO = new Date(Date.now() - 90 * 864e5).toISOString();
 export default function ProfileScreen(): React.ReactElement {
   const navigation = useNavigation();
   const { user, signOut } = useAuth();
+  const alert = useAlert();
   const [profile, setProfile] = useState<ProfileDisplay | null>(null);
   const [runsForStats, setRunsForStats] = useState<{ started_at: string; distance: number }[]>([]);
   const [weeklyGoalKm, setWeeklyGoalKmState] = useState(0);
@@ -50,23 +52,31 @@ export default function ProfileScreen(): React.ReactElement {
 
   const loadProfile = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("username, display_name, city, total_distance, total_runs, territories_owned, territories_defended, level")
       .eq("user_id", user.id)
       .single();
+    if (error) {
+      alert.show("Error", error.message || "Failed to load profile.");
+      return;
+    }
     if (data) setProfile(data as ProfileDisplay);
-  }, [user]);
+  }, [user, alert]);
 
   const loadRunsForStats = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("runs")
       .select("started_at, distance")
       .eq("user_id", user.id)
       .gte("started_at", NINETY_DAYS_AGO);
+    if (error) {
+      alert.show("Error", error.message || "Failed to load run stats.");
+      return;
+    }
     if (data) setRunsForStats(data as { started_at: string; distance: number }[]);
-  }, [user]);
+  }, [user, alert]);
 
   useEffect(() => {
     if (!user) return;
@@ -170,6 +180,8 @@ export default function ProfileScreen(): React.ReactElement {
           style={styles.levelRow}
           onPress={() => rootNav?.navigate("LevelProgression", { profile: profile ?? undefined })}
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={`Level ${displayLevel}. Tap to view level details and progress.`}
         >
           <Shield size={12} stroke={colors.primary} />
           <Text style={styles.levelText}>LEVEL {displayLevel}</Text>
@@ -197,7 +209,13 @@ export default function ProfileScreen(): React.ReactElement {
         </BlurView>
       )}
 
-      <TouchableOpacity onPress={openGoalModal} style={styles.remindersRow} activeOpacity={0.8}>
+      <TouchableOpacity
+        onPress={openGoalModal}
+        style={styles.remindersRow}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Weekly goal. Tap to set or change your weekly distance target."
+      >
         <BlurView intensity={70} tint="dark" style={styles.remindersCard}>
           <Target size={18} stroke={colors.primary} style={styles.remindersIcon} />
           <View style={styles.remindersTextWrap}>
@@ -212,7 +230,13 @@ export default function ProfileScreen(): React.ReactElement {
         </BlurView>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={openRunReminders} style={styles.remindersRow} activeOpacity={0.8}>
+      <TouchableOpacity
+        onPress={openRunReminders}
+        style={styles.remindersRow}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Run reminders. Tap to set days and time for run reminders."
+      >
         <BlurView intensity={70} tint="dark" style={styles.remindersCard}>
           <Bell size={18} stroke={colors.primary} style={styles.remindersIcon} />
           <View style={styles.remindersTextWrap}>
@@ -275,7 +299,13 @@ export default function ProfileScreen(): React.ReactElement {
         </View>
       </View>
 
-      <TouchableOpacity onPress={() => rootNav?.navigate("Terms")} style={styles.remindersRow} activeOpacity={0.8}>
+      <TouchableOpacity
+        onPress={() => rootNav?.navigate("Terms")}
+        style={styles.remindersRow}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Terms and Conditions"
+      >
         <BlurView intensity={70} tint="dark" style={styles.remindersCard}>
           <FileText size={18} stroke={colors.primary} style={styles.remindersIcon} />
           <View style={styles.remindersTextWrap}>
@@ -286,7 +316,13 @@ export default function ProfileScreen(): React.ReactElement {
         </BlurView>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => rootNav?.navigate("About")} style={styles.remindersRow} activeOpacity={0.8}>
+      <TouchableOpacity
+        onPress={() => rootNav?.navigate("About")}
+        style={styles.remindersRow}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="About and Privacy"
+      >
         <BlurView intensity={70} tint="dark" style={styles.remindersCard}>
           <Info size={18} stroke={colors.primary} style={styles.remindersIcon} />
           <View style={styles.remindersTextWrap}>
@@ -301,6 +337,8 @@ export default function ProfileScreen(): React.ReactElement {
         onPress={handleSignOut}
         style={styles.signOutButton}
         activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Sign out"
       >
         <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} />
         <LogOut size={16} stroke={colors.destructive} />

@@ -272,6 +272,8 @@ export default function MapScreen(): React.ReactElement {
       <TouchableOpacity
         onPress={centerOnUser}
         style={styles.myLocationButton}
+        accessibilityRole="button"
+        accessibilityLabel="Center map on my location"
         activeOpacity={0.9}
       >
         <MapPin size={22} stroke={colors.primaryForeground} />
@@ -281,6 +283,8 @@ export default function MapScreen(): React.ReactElement {
         <TouchableOpacity
           onPress={() => navigation.navigate("Run")}
           style={styles.primaryButton}
+          accessibilityRole="button"
+          accessibilityLabel="Start run"
           activeOpacity={0.9}
         >
           <Text style={styles.primaryButtonText}>START RUN</Text>

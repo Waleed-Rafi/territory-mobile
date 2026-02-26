@@ -284,6 +284,8 @@ export default function RunScreen(): React.ReactElement {
             saving && styles.mainButtonDisabled,
           ]}
           activeOpacity={0.9}
+          accessibilityRole="button"
+          accessibilityLabel={saving ? "Saving run" : tracking ? "Stop run" : "Start run"}
         >
           {saving ? (
             <Loader type="spinner" color={colors.primaryForeground} />

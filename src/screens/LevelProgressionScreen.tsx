@@ -4,6 +4,7 @@ import { BlurView } from "expo-blur";
 import { useRoute, RouteProp } from "@react-navigation/native";
 import { Shield, TrendingUp, Flame, MapPin, ChevronRight, Target, Zap } from "lucide-react-native";
 import { useAuth } from "../contexts/AuthContext";
+import { useAlert } from "../contexts/AlertContext";
 import { supabase } from "../supabase/client";
 import { colors, radius, spacing, typography } from "../theme";
 import type { RootStackParamList } from "../types/navigation";
@@ -27,6 +28,7 @@ export default function LevelProgressionScreen(): React.ReactElement {
   const route = useRoute<LevelProgressionRouteProp>();
   const { profile: profileParam } = route.params ?? {};
   const { user } = useAuth();
+  const alert = useAlert();
   const [profile, setProfile] = useState<ProfileDisplay | null>(profileParam ?? null);
 
   useEffect(() => {
@@ -37,11 +39,16 @@ export default function LevelProgressionScreen(): React.ReactElement {
       .select("username, display_name, city, total_distance, total_runs, territories_owned, level")
       .eq("user_id", user.id)
       .single()
-      .then(({ data }) => {
-        if (!cancelled && data) setProfile(data as ProfileDisplay);
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          alert.show("Error", error.message || "Failed to load profile.");
+          return;
+        }
+        if (data) setProfile(data as ProfileDisplay);
       });
     return () => { cancelled = true; };
-  }, [user, profileParam]);
+  }, [user, profileParam, alert]);
 
   const totalDistanceM = profile?.total_distance ?? 0;
   const totalRuns = profile?.total_runs ?? 0;
