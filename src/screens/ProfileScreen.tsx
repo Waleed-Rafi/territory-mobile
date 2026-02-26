@@ -13,6 +13,8 @@ import {
 import { Shield, Flame, MapPin, TrendingUp, LogOut, Bell, ChevronRight, Trophy, Target, Calendar, FileText, Info, Zap } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../types/navigation";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../supabase/client";
 import { formatDistance } from "../lib/gps";
@@ -27,6 +29,7 @@ import {
   getMonthStart,
   statsInPeriod,
 } from "../utils/streaks";
+import { computeXp, getLevelFromXp } from "../constants/levels";
 
 const NINETY_DAYS_AGO = new Date(Date.now() - 90 * 864e5).toISOString();
 
@@ -74,7 +77,7 @@ export default function ProfileScreen(): React.ReactElement {
     await signOut();
   };
 
-  const rootNav = navigation.getParent() as { navigate: (name: string) => void } | undefined;
+  const rootNav = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
 
   const runDates = getRunDates(runsForStats.map((r) => r.started_at));
   const currentStreak = getCurrentStreak(runDates);
@@ -96,6 +99,9 @@ export default function ProfileScreen(): React.ReactElement {
     }
     setGoalModalVisible(false);
   };
+
+  const totalDistanceM = profile?.total_distance ?? 0;
+  const displayLevel = getLevelFromXp(computeXp(totalDistanceM, profile?.total_runs ?? 0, profile?.territories_owned ?? 0));
 
   const streakLabel = currentStreak === 1 ? "1 day" : `${currentStreak} days`;
   const stats = [
@@ -140,10 +146,15 @@ export default function ProfileScreen(): React.ReactElement {
           {profile?.display_name || profile?.username || "Runner"}
         </Text>
         <Text style={styles.city}>{profile?.city || "Location not set"}</Text>
-        <View style={styles.levelRow}>
+        <TouchableOpacity
+          style={styles.levelRow}
+          onPress={() => rootNav?.navigate("LevelProgression", { profile: profile ?? undefined })}
+          activeOpacity={0.7}
+        >
           <Shield size={12} stroke={colors.primary} />
-          <Text style={styles.levelText}>LEVEL {profile?.level || 1}</Text>
-        </View>
+          <Text style={styles.levelText}>LEVEL {displayLevel}</Text>
+          <ChevronRight size={14} stroke={colors.mutedForeground} style={styles.levelChevron} />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.statsGrid}>
@@ -350,6 +361,7 @@ const styles = StyleSheet.create({
   city: { fontSize: 14, color: colors.mutedForeground, marginTop: 4 },
   levelRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 8 },
   levelText: { fontSize: 12, color: colors.primary, fontFamily: typography.display, letterSpacing: 2 },
+  levelChevron: { marginLeft: "auto" },
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
