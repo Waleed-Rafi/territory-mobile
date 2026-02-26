@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, FlatList, Image } from "react-native";
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from "react-native";
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
 import { BlurView } from "expo-blur";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../supabase/client";
 import { Loader } from "../components/Loaders";
 import { colors, radius, spacing, typography } from "../theme";
 import type { ActivityDisplay, RunSummary } from "../types/domain";
+import type { RootStackParamList } from "../types/navigation";
 import { getActivityIcon, getActivityColor } from "../constants/activity";
 import { timeAgo } from "../utils/format";
 
@@ -45,6 +48,8 @@ function normalizeRun(r: unknown): RunSummary | null {
 
 export default function ActivityScreen(): React.ReactElement {
   const { user } = useAuth();
+  const navigation = useNavigation();
+  const rootNav = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
   const [activities, setActivities] = useState<ActivityDisplay[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -102,44 +107,49 @@ export default function ActivityScreen(): React.ReactElement {
         : null;
 
     return (
-      <BlurView
+      <TouchableOpacity
         key={item.id}
-        intensity={70}
-        tint="dark"
-        style={[styles.card, item.is_urgent && styles.cardUrgent]}
+        activeOpacity={0.85}
+        onPress={() => rootNav?.navigate("ActivityDetail", { activity: item })}
       >
-        <View style={styles.cardIcon}>
-          <Icon size={18} color={color} />
-        </View>
-        <View style={styles.cardContent}>
-          <Text style={styles.cardTitle}>{item.title}</Text>
-          {item.description ? (
-            <Text style={styles.cardDesc}>{item.description}</Text>
-          ) : null}
-          {run?.photo_urls && run.photo_urls.length > 0 ? (
-            <View style={styles.photoRow}>
-              {run.photo_urls.slice(0, 4).map((path, i) => (
-                <RunPhotoThumbnail key={i} path={path} size={56} />
-              ))}
-            </View>
-          ) : null}
-          {mapRegion && routeCoords && routeCoords.length > 0 ? (
-            <View style={styles.mapWrap}>
-              <MapView
-                style={styles.miniMap}
-                provider={PROVIDER_DEFAULT}
-                initialRegion={mapRegion}
-                scrollEnabled={false}
-                zoomEnabled={false}
-                pitchEnabled={false}
-              >
-                <Polyline coordinates={routeCoords} strokeColor={colors.primary} strokeWidth={3} />
-              </MapView>
-            </View>
-          ) : null}
-        </View>
-        <Text style={styles.cardTime}>{timeAgo(item.created_at)}</Text>
-      </BlurView>
+        <BlurView
+          intensity={70}
+          tint="dark"
+          style={[styles.card, item.is_urgent && styles.cardUrgent]}
+        >
+          <View style={styles.cardIcon}>
+            <Icon size={18} color={color} />
+          </View>
+          <View style={styles.cardContent}>
+            <Text style={styles.cardTitle}>{item.title}</Text>
+            {item.description ? (
+              <Text style={styles.cardDesc}>{item.description}</Text>
+            ) : null}
+            {run?.photo_urls && run.photo_urls.length > 0 ? (
+              <View style={styles.photoRow}>
+                {run.photo_urls.slice(0, 4).map((path, i) => (
+                  <RunPhotoThumbnail key={i} path={path} size={56} />
+                ))}
+              </View>
+            ) : null}
+            {mapRegion && routeCoords && routeCoords.length > 0 ? (
+              <View style={styles.mapWrap}>
+                <MapView
+                  style={styles.miniMap}
+                  provider={PROVIDER_DEFAULT}
+                  initialRegion={mapRegion}
+                  scrollEnabled={false}
+                  zoomEnabled={false}
+                  pitchEnabled={false}
+                >
+                  <Polyline coordinates={routeCoords} strokeColor={colors.primary} strokeWidth={3} />
+                </MapView>
+              </View>
+            ) : null}
+          </View>
+          <Text style={styles.cardTime}>{timeAgo(item.created_at)}</Text>
+        </BlurView>
+      </TouchableOpacity>
     );
   };
 

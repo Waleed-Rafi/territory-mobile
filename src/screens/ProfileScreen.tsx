@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { Shield, Flame, MapPin, TrendingUp, LogOut, Bell, ChevronRight, Trophy, Target, Calendar, FileText, Info } from "lucide-react-native";
+import { Shield, Flame, MapPin, TrendingUp, LogOut, Bell, ChevronRight, Trophy, Target, Calendar, FileText, Info, Zap } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../contexts/AuthContext";
@@ -97,11 +97,12 @@ export default function ProfileScreen(): React.ReactElement {
     setGoalModalVisible(false);
   };
 
+  const streakLabel = currentStreak === 1 ? "1 day" : `${currentStreak} days`;
   const stats = [
     { icon: Flame, label: "Total Runs", value: profile?.total_runs?.toString() || "0" },
     { icon: MapPin, label: "Territories", value: profile?.territories_owned?.toString() || "0" },
     { icon: TrendingUp, label: "Distance", value: formatDistance(profile?.total_distance || 0) },
-    { icon: Shield, label: "Defended", value: profile?.territories_defended?.toString() || "0" },
+    { icon: Zap, label: "Streak", value: currentStreak > 0 ? streakLabel : "0" },
   ];
 
   const weeksForCalendar = 5;

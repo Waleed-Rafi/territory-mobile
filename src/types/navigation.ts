@@ -5,6 +5,7 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { CompositeScreenProps } from "@react-navigation/native";
+import type { ActivityDisplay } from "./domain";
 
 /** Params for NameYourRun (post-run details: name, description, photos, route) */
 export type NameYourRunParams = {
@@ -15,7 +16,12 @@ export type NameYourRunParams = {
   suggestedDescription: string;
 };
 
-/** Root stack: Auth when unauthenticated; Main + RunReminder + NameYourRun + Terms + About when authenticated */
+/** Params for ActivityDetail (tap from Activity feed) */
+export type ActivityDetailParams = {
+  activity: ActivityDisplay;
+};
+
+/** Root stack: Auth when unauthenticated; Main + RunReminder + NameYourRun + Terms + About + ActivityDetail when authenticated */
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
@@ -23,6 +29,7 @@ export type RootStackParamList = {
   NameYourRun: NameYourRunParams;
   Terms: undefined;
   About: undefined;
+  ActivityDetail: ActivityDetailParams;
 };
 
 /** Main tab screens (authenticated) */
