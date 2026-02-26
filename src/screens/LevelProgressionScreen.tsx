@@ -226,13 +226,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   heroBadge: {
-    width: 96,
-    paddingVertical: spacing.md,
+    width: 110,
+    minHeight: 100,
     paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderRadius: radius.xl,
     backgroundColor: "rgba(0, 255, 136, 0.12)",
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
     marginBottom: spacing.lg,
   },
   heroLevel: {
@@ -240,7 +242,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 2,
     color: colors.primary,
-    marginTop: 6,
   },
   heroName: {
     fontFamily: typography.display,
