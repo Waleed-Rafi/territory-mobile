@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
   zonesText: { fontSize: 12, color: colors.secondaryForeground },
   legend: {
     position: "absolute",
-    bottom: 180,
+    bottom: 220,
     left: spacing.lg,
   },
   glassLegend: {
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   legendLabel: { fontSize: 11, color: colors.secondaryForeground },
   stats: {
     position: "absolute",
-    bottom: 180,
+    bottom: 220,
     right: spacing.lg,
   },
   glassStats: {
