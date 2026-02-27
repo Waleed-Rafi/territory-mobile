@@ -56,10 +56,9 @@ export const strings = {
     startRunA11y: "Start run",
     stopRunA11y: "Stop run",
     savingRunA11y: "Saving run",
-    loopClosed: "Loop closed! Stop now to claim territory",
+    loopClosed: "Loop closed! Stop to claim territory",
     startToTrack: "Start run to track your route",
-    tipLoop: (min: string) =>
-      `Run a closed loop of at least ${min} to claim territory. Your route becomes your domain.`,
+    tipLoop: "Run a loop that encloses an area (not a straight line) to claim territory. You can claim multiple loops in one run.",
   },
   map: {
     startRun: "Start run",

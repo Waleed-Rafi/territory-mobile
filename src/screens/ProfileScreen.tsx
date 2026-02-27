@@ -219,7 +219,7 @@ export default function ProfileScreen(): React.ReactElement {
           <Lightbulb size={16} stroke={colors.primary} />
           <Text style={styles.tipsTitle}>{strings.profile.gettingStarted}</Text>
         </View>
-        <Text style={styles.tipsItem}>• Run a closed loop of 100m+ to claim territory on the map.</Text>
+        <Text style={styles.tipsItem}>• Run loops that enclose an area (not a straight line) to claim territory. Multiple loops per run count.</Text>
         <Text style={styles.tipsItem}>• Set a weekly goal and run reminders to build a habit.</Text>
         <Text style={styles.tipsItem}>• Track your personal records and run history from Profile.</Text>
       </View>

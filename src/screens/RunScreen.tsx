@@ -17,8 +17,8 @@ import { cancelRunReminderFollowUp } from "../utils/runReminders";
 import {
   calculateTotalDistance,
   isClosedLoop,
+  getClosedLoopPolygons,
   validateRun,
-  pointsToPolygon,
   calculatePolygonArea,
   getPolygonCenter,
   formatDistance,
@@ -107,7 +107,8 @@ export default function RunScreen(): React.ReactElement {
     }
     setSaving(true);
     const validation = validateRun(points);
-    const canClaimTerritory = closedLoop && validation.valid;
+    const loopPolygons = getClosedLoopPolygons(points);
+    const canClaimTerritory = loopPolygons.length > 0 && validation.valid;
 
     try {
       const runData: RunInsert = {
@@ -131,35 +132,40 @@ export default function RunScreen(): React.ReactElement {
 
       const { data: currentProfile } = await supabase
         .from("profiles")
-        .select("total_distance, total_runs")
+        .select("total_distance, total_runs, territories_owned")
         .eq("user_id", user.id)
         .single();
       if (currentProfile) {
-        await supabase
-          .from("profiles")
-          .update({
-            total_distance: (currentProfile.total_distance || 0) + totalDistance,
-            total_runs: (currentProfile.total_runs || 0) + 1,
-          })
-          .eq("user_id", user.id);
+        const updates: { total_distance: number; total_runs: number; territories_owned?: number } = {
+          total_distance: (currentProfile.total_distance || 0) + totalDistance,
+          total_runs: (currentProfile.total_runs || 0) + 1,
+        };
+        if (canClaimTerritory && run && loopPolygons.length > 0) {
+          updates.territories_owned = (currentProfile.territories_owned ?? 0) + loopPolygons.length;
+        }
+        await supabase.from("profiles").update(updates).eq("user_id", user.id);
       }
 
       let claimedAreaSqKm: number | null = null;
+      let territoryCount = 0;
       if (canClaimTerritory && run) {
-        const polygon = pointsToPolygon(points);
-        const area = calculatePolygonArea(polygon);
-        claimedAreaSqKm = area / 1e6;
-        const center = getPolygonCenter(polygon);
-        const territoryData: TerritoryInsert = {
-          owner_id: user.id,
-          polygon,
-          center_lat: center.lat,
-          center_lng: center.lng,
-          area_sqm: area,
-          strength: 100,
-          created_from_run_id: run.id,
-        };
-        await supabase.from("territories").insert(territoryData);
+        for (const polygon of loopPolygons) {
+          const area = calculatePolygonArea(polygon);
+          const center = getPolygonCenter(polygon);
+          const territoryData: TerritoryInsert = {
+            owner_id: user.id,
+            polygon,
+            center_lat: center.lat,
+            center_lng: center.lng,
+            area_sqm: area,
+            strength: 100,
+            created_from_run_id: run.id,
+          };
+          await supabase.from("territories").insert(territoryData);
+          territoryCount++;
+          claimedAreaSqKm = (claimedAreaSqKm ?? 0) + area / 1e6;
+        }
+        await supabase.from("runs").update({ territory_claimed: true }).eq("id", run.id);
       }
 
       if (run) {
@@ -168,7 +174,9 @@ export default function RunScreen(): React.ReactElement {
         const suggestedTitle = canClaimTerritory ? "New Territory Claimed!" : "Run Completed";
         const suggestedDescription =
           canClaimTerritory && claimedAreaSqKm != null
-            ? `Claimed ${claimedAreaSqKm.toFixed(3)} km² with a ${formatDistance(totalDistance)} run`
+            ? territoryCount > 1
+              ? `Claimed ${territoryCount} territories (${claimedAreaSqKm.toFixed(3)} km²) · ${formatDistance(totalDistance)} run`
+              : `Claimed ${claimedAreaSqKm.toFixed(3)} km² with a ${formatDistance(totalDistance)} run`
             : `${formatDistance(totalDistance)} in ${formatDuration(elapsed)}`;
         rootNav?.navigate("NameYourRun", {
           runId: run.id,
@@ -299,7 +307,7 @@ export default function RunScreen(): React.ReactElement {
         {!tracking && !saving && (
           <BlurView intensity={70} tint="dark" style={styles.tipCard}>
             <Text style={styles.tipText}>
-              {strings.run.tipLoop("100m")}
+              {strings.run.tipLoop}
             </Text>
           </BlurView>
         )}

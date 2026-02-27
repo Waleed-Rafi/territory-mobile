@@ -9,7 +9,17 @@ export interface GpsPoint {
 const MAX_SPEED_KMH = 25;
 const MIN_ACCURACY_M = 50;
 const MIN_DISTANCE_KM = 0.1;
-const CLOSE_LOOP_RADIUS_M = 100;
+
+/** Max distance (m) between two path points to consider the loop "closed" at that pair. */
+export const CLOSE_LOOP_RADIUS_M = 50;
+/** Min distance (m) from loop anchor that the path must reach – avoids tiny loops. */
+const MIN_LOOP_EXTENT_M = 50;
+/** Min enclosed area (m²) so the loop has a real gap (not a straight out-and-back). */
+const MIN_LOOP_AREA_SQM = 2000;
+/** Min number of points in a loop segment (i to j). */
+const MIN_LOOP_POINTS = 15;
+/** Max claimable loops per run (avoid noise). */
+const MAX_CLAIMABLE_LOOPS = 10;
 
 export function haversineDistance(
   lat1: number, lng1: number,
@@ -36,12 +46,78 @@ export function calculateTotalDistance(points: GpsPoint[]): number {
   return total;
 }
 
+/** Build a closed polygon from a slice of points (path from i to j, then back to i). */
+function sliceToClosedPolygon(points: GpsPoint[], i: number, j: number): [number, number][] {
+  const step = Math.max(1, Math.floor((j - i + 1) / 50));
+  const out: [number, number][] = [];
+  for (let k = i; k <= j; k += step) out.push([points[k].lat, points[k].lng]);
+  if (out.length > 0) out.push([points[i].lat, points[i].lng]);
+  return out;
+}
+
+/** Ray-casting: true if (lat, lng) is inside polygon (closed: first point = last point). */
+function isPointInPolygon(lat: number, lng: number, polygon: [number, number][]): boolean {
+  const n = polygon.length - 1;
+  if (n < 3) return false;
+  let inside = false;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const xi = polygon[i][1], yi = polygon[i][0];
+    const xj = polygon[j][1], yj = polygon[j][0];
+    if (((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+
+/**
+ * Find all closed loops in the path with a "good gap" (sufficient enclosed area, not a straight line).
+ * A loop is when the path comes back within CLOSE_LOOP_RADIUS_M of a previous point; the segment
+ * between them forms a closed region. No requirement to return to the start.
+ * Returns polygons suitable for claiming as territories (deduped, max MAX_CLAIMABLE_LOOPS).
+ */
+export function getClosedLoopPolygons(points: GpsPoint[]): [number, number][][] {
+  const polygons: [number, number][][] = [];
+  const n = points.length;
+  if (n < MIN_LOOP_POINTS + 5) return polygons;
+
+  for (let i = 0; i <= n - MIN_LOOP_POINTS; i++) {
+    const anchor = points[i];
+    for (let j = i + MIN_LOOP_POINTS; j < n; j++) {
+      const d = haversineDistance(anchor.lat, anchor.lng, points[j].lat, points[j].lng);
+      if (d > CLOSE_LOOP_RADIUS_M) continue;
+
+      const poly = sliceToClosedPolygon(points, i, j);
+      if (poly.length < 4) continue;
+
+      const area = calculatePolygonArea(poly);
+      if (area < MIN_LOOP_AREA_SQM) continue;
+
+      let maxExtent = 0;
+      for (let k = i; k <= j; k++) {
+        const dist = haversineDistance(anchor.lat, anchor.lng, points[k].lat, points[k].lng);
+        if (dist > maxExtent) maxExtent = dist;
+      }
+      if (maxExtent < MIN_LOOP_EXTENT_M) continue;
+
+      polygons.push(poly);
+    }
+  }
+
+  if (polygons.length === 0) return [];
+  polygons.sort((a, b) => calculatePolygonArea(b) - calculatePolygonArea(a));
+
+  const kept: [number, number][][] = [];
+  for (const poly of polygons) {
+    if (kept.length >= MAX_CLAIMABLE_LOOPS) break;
+    const center = getPolygonCenter(poly);
+    const contained = kept.some((k) => isPointInPolygon(center.lat, center.lng, k));
+    if (!contained) kept.push(poly);
+  }
+  return kept;
+}
+
+/** True if the route contains at least one claimable closed loop (with good gap). */
 export function isClosedLoop(points: GpsPoint[]): boolean {
-  if (points.length < 10) return false;
-  const first = points[0];
-  const last = points[points.length - 1];
-  const dist = haversineDistance(first.lat, first.lng, last.lat, last.lng);
-  return dist <= CLOSE_LOOP_RADIUS_M;
+  return getClosedLoopPolygons(points).length > 0;
 }
 
 export function validatePoint(point: GpsPoint, prevPoint?: GpsPoint): { valid: boolean; reason?: string } {
