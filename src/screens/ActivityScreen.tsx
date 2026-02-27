@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Platform } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Platform, useWindowDimensions } from "react-native";
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
 import { GlassCard } from "../components/GlassCard";
 import { darkMapStyle } from "../theme/mapStyle";
@@ -14,7 +14,7 @@ import type { ActivityDisplay } from "../types/domain";
 import { parseActivityList } from "../types/supabase-responses";
 import type { RootStackParamList } from "../types/navigation";
 import { RunPhotoThumbnail } from "../components/RunPhotoThumbnail";
-import { polylineToMapRegion } from "../lib/gps";
+import { polylineToMapRegion, MAP_FIT_TIGHT, formatDistance, formatDuration, formatPace } from "../lib/gps";
 import { getActivityIcon, getActivityColor } from "../constants/activity";
 import { timeAgo } from "../utils/format";
 import { strings } from "../l10n/strings";
@@ -35,7 +35,10 @@ function normalizeRealtimeActivity(row: Record<string, unknown>): ActivityDispla
   };
 }
 
+const CARD_MAP_HEIGHT = 140;
+
 export default function ActivityScreen(): React.ReactElement {
+  const { width } = useWindowDimensions();
   const { user } = useAuth();
   const alert = useAlert();
   const navigation = useNavigation();
@@ -43,12 +46,13 @@ export default function ActivityScreen(): React.ReactElement {
   const [activities, setActivities] = useState<ActivityDisplay[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const mapAspect = (width - 2 * spacing.lg) / CARD_MAP_HEIGHT;
 
   const loadActivities = useCallback(async () => {
     if (!user) return;
     const { data, error } = await supabase
       .from("activities")
-      .select("id, type, title, description, is_urgent, created_at, run_id, runs(name, description, photo_urls, route_polyline)")
+      .select("id, type, title, description, is_urgent, created_at, run_id, runs(name, description, photo_urls, route_polyline, distance, duration, avg_pace, started_at)")
       .or(`user_id.eq.${user.id},target_user_id.eq.${user.id}`)
       .order("created_at", { ascending: false })
       .limit(ACTIVITY_FEED_PAGE_SIZE);
@@ -89,10 +93,17 @@ export default function ActivityScreen(): React.ReactElement {
     const Icon = getActivityIcon(item.type);
     const color = getActivityColor(item.type);
     const run = item.run;
+    const paceMps =
+      run != null && run.duration > 0
+        ? run.avg_pace != null
+          ? 1000 / (run.avg_pace * 60)
+          : run.distance / run.duration
+        : 0;
+    const hasRunStats = run && (run.distance > 0 || run.duration > 0);
     const routeCoords =
       run?.route_polyline?.length &&
       run.route_polyline.map(([lat, lng]) => ({ latitude: lat, longitude: lng }));
-    const mapRegion = run?.route_polyline?.length ? polylineToMapRegion(run.route_polyline, 1.5) : null;
+    const mapRegion = run?.route_polyline?.length ? polylineToMapRegion(run.route_polyline, MAP_FIT_TIGHT, mapAspect) : null;
 
     return (
       <TouchableOpacity
@@ -105,22 +116,50 @@ export default function ActivityScreen(): React.ReactElement {
         <GlassCard
           style={[styles.card, item.is_urgent && styles.cardUrgent]}
         >
-          <View style={styles.cardIcon}>
-            <Icon size={18} color={color} />
+          <View style={styles.cardTop}>
+            <View style={styles.cardIcon}>
+              <Icon size={20} color={color} />
+            </View>
+            <View style={styles.cardMeta}>
+              <Text style={styles.cardTitle}>{item.title}</Text>
+              <Text style={styles.cardTime}>{timeAgo(item.created_at)}</Text>
+            </View>
           </View>
-          <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>{item.title}</Text>
-            {item.description ? (
-              <Text style={styles.cardDesc}>{item.description}</Text>
-            ) : null}
-            {run?.photo_urls && run.photo_urls.length > 0 ? (
-              <View style={styles.photoRow}>
-                {run.photo_urls.slice(0, 4).map((path, i) => (
-                  <RunPhotoThumbnail key={i} path={path} size={56} />
-                ))}
-              </View>
-            ) : null}
-            {mapRegion && routeCoords && routeCoords.length > 0 ? (
+          {hasRunStats && run ? (
+            <View style={styles.statsRow}>
+              {run.distance > 0 ? (
+                <View style={styles.statBlock}>
+                  <Text style={styles.statValue}>{formatDistance(run.distance)}</Text>
+                  <Text style={styles.statLabel}>Distance</Text>
+                </View>
+              ) : null}
+              {run.duration > 0 ? (
+                <View style={styles.statBlock}>
+                  <Text style={styles.statValue}>{formatDuration(run.duration)}</Text>
+                  <Text style={styles.statLabel}>Duration</Text>
+                </View>
+              ) : null}
+              {paceMps > 0 ? (
+                <View style={styles.statBlock}>
+                  <Text style={styles.statValue}>{formatPace(paceMps)}<Text style={styles.statUnit}>/km</Text></Text>
+                  <Text style={styles.statLabel}>Pace</Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+          {item.description ? (
+            <Text style={styles.cardDesc}>{item.description}</Text>
+          ) : null}
+          {run?.photo_urls && run.photo_urls.length > 0 ? (
+            <View style={styles.photoRow}>
+              {run.photo_urls.slice(0, 4).map((path, i) => (
+                <RunPhotoThumbnail key={i} path={path} size={56} />
+              ))}
+            </View>
+          ) : null}
+          {mapRegion && routeCoords && routeCoords.length > 0 ? (
+            <View style={styles.mapSection}>
+              <Text style={styles.mapLabel}>Route</Text>
               <View style={styles.mapWrap}>
                 <MapView
                   style={styles.miniMap}
@@ -136,9 +175,8 @@ export default function ActivityScreen(): React.ReactElement {
                   <Polyline coordinates={routeCoords} strokeColor={colors.primary} strokeWidth={3} />
                 </MapView>
               </View>
-            ) : null}
-          </View>
-          <Text style={styles.cardTime}>{timeAgo(item.created_at)}</Text>
+            </View>
+          ) : null}
         </GlassCard>
       </TouchableOpacity>
     );
@@ -159,7 +197,12 @@ export default function ActivityScreen(): React.ReactElement {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>{strings.activity.title}</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.header}>{strings.activity.title}</Text>
+        {activities.length > 0 ? (
+          <Text style={styles.headerCount}>{activities.length}</Text>
+        ) : null}
+      </View>
       <FlatList
         data={activities}
         renderItem={renderItem}
@@ -184,13 +227,18 @@ export default function ActivityScreen(): React.ReactElement {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.lg, paddingTop: 56 },
+  headerRow: { flexDirection: "row", alignItems: "baseline", marginBottom: spacing.lg, gap: spacing.sm },
   header: {
     fontFamily: typography.display,
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
     color: colors.foreground,
-    marginBottom: spacing.lg,
     letterSpacing: 2,
+  },
+  headerCount: {
+    fontSize: 14,
+    color: colors.mutedForeground,
+    fontWeight: "600",
   },
   list: { paddingBottom: 100 },
   listEmpty: { flexGrow: 1 },
@@ -198,21 +246,48 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderRadius: radius.lg,
     padding: spacing.lg,
-    flexDirection: "row",
-    alignItems: "flex-start",
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
-  cardUrgent: { borderLeftWidth: 2, borderLeftColor: colors.enemy },
-  cardIcon: { marginRight: spacing.md, marginTop: 2 },
+  cardUrgent: { borderLeftWidth: 3, borderLeftColor: colors.enemy },
+  cardTop: { flexDirection: "row", alignItems: "flex-start", marginBottom: spacing.xs },
+  cardIcon: { marginRight: spacing.md },
+  cardMeta: { flex: 1, minWidth: 0 },
   cardContent: { flex: 1, minWidth: 0 },
-  cardTitle: { fontSize: 14, fontWeight: "600", color: colors.foreground },
-  cardDesc: { fontSize: 12, color: colors.mutedForeground, marginTop: 2 },
+  cardTitle: { fontSize: 15, fontWeight: "700", color: colors.foreground },
+  cardDesc: { fontSize: 13, color: colors.mutedForeground, marginTop: spacing.sm, lineHeight: 20 },
+  cardTime: { fontSize: 11, color: colors.mutedForeground, marginTop: 2 },
+  statsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.lg,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.glassBorder,
+  },
+  statBlock: { minWidth: 64 },
+  statValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.foreground,
+    fontFamily: typography.display,
+  },
+  statUnit: { fontSize: 14, fontWeight: "600", color: colors.mutedForeground },
+  statLabel: { fontSize: 11, color: colors.mutedForeground, marginTop: 2, letterSpacing: 0.5 },
   photoRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.sm },
-  mapWrap: { height: 100, borderRadius: radius.sm, overflow: "hidden", marginTop: spacing.sm, backgroundColor: colors.secondary },
-  miniMap: { flex: 1, width: "100%", height: "100%" },
-  cardTime: { fontSize: 10, color: colors.mutedForeground, marginLeft: spacing.sm },
+  mapSection: { marginTop: spacing.md },
+  mapLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.mutedForeground,
+    letterSpacing: 1,
+    marginBottom: spacing.xs,
+  },
+  /* Fixed height for all runs; only the region (zoom) inside adapts to the route. */
+  mapWrap: { height: CARD_MAP_HEIGHT, borderRadius: radius.md, overflow: "hidden", backgroundColor: colors.secondary },
+  miniMap: StyleSheet.absoluteFillObject,
   placeholder: { padding: spacing["2xl"], alignItems: "center" },
   skeletonWrap: { marginBottom: spacing.lg, width: "100%", maxWidth: 280 },
   placeholderText: { color: colors.mutedForeground },

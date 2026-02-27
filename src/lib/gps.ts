@@ -129,10 +129,24 @@ export interface MapRegion {
   longitudeDelta: number;
 }
 
-/** Compute a MapView region that fits the given polyline. paddingFactor (default 1.5) adds margin. */
+/** Padding factor for polylineToMapRegion. Use TIGHT_FIT so the path nearly fills the map. */
+export const MAP_FIT_TIGHT = 1.15;
+/** Slightly more padding than TIGHT_FIT (e.g. for small thumbnails). */
+export const MAP_FIT_NORMAL = 1.35;
+
+/** Minimum lat/lng delta (degrees). ~0.002 ≈ 220m – allows tight zoom on short routes. */
+const MIN_REGION_DELTA = 0.002;
+
+/**
+ * Compute the visible map region (zoom/center) that fits the route. The map *container* height
+ * is always fixed by the caller; only the region inside the map changes (zoomed in for short
+ * routes, zoomed out for long routes). Pass viewAspectRatio = width/height of the map view
+ * so the route fills the frame with no letterboxing.
+ */
 export function polylineToMapRegion(
   polyline: [number, number][],
-  paddingFactor = 1.5
+  paddingFactor = MAP_FIT_NORMAL,
+  viewAspectRatio?: number
 ): MapRegion | null {
   if (!polyline?.length) return null;
   const lats = polyline.map(([lat]) => lat);
@@ -141,11 +155,27 @@ export function polylineToMapRegion(
   const maxLat = Math.max(...lats);
   const minLng = Math.min(...lngs);
   const maxLng = Math.max(...lngs);
+  const centerLat = (minLat + maxLat) / 2;
+  const centerLng = (minLng + maxLng) / 2;
+
+  let latDelta = Math.max(MIN_REGION_DELTA, (maxLat - minLat) * paddingFactor || MIN_REGION_DELTA);
+  let lngDelta = Math.max(MIN_REGION_DELTA, (maxLng - minLng) * paddingFactor || MIN_REGION_DELTA);
+
+  if (viewAspectRatio != null && viewAspectRatio > 0) {
+    const cosLat = Math.cos((centerLat * Math.PI) / 180);
+    const regionAspect = (lngDelta * cosLat) / latDelta;
+    if (regionAspect < viewAspectRatio) {
+      lngDelta = (latDelta * viewAspectRatio) / cosLat;
+    } else if (regionAspect > viewAspectRatio) {
+      latDelta = (lngDelta * cosLat) / viewAspectRatio;
+    }
+  }
+
   return {
-    latitude: (minLat + maxLat) / 2,
-    longitude: (minLng + maxLng) / 2,
-    latitudeDelta: Math.max(0.01, (maxLat - minLat) * paddingFactor || 0.01),
-    longitudeDelta: Math.max(0.01, (maxLng - minLng) * paddingFactor || 0.01),
+    latitude: centerLat,
+    longitude: centerLng,
+    latitudeDelta: latDelta,
+    longitudeDelta: lngDelta,
   };
 }
 

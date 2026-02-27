@@ -1,11 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Platform } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions } from "react-native";
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
 import { GlassCard } from "../components/GlassCard";
 import { darkMapStyle } from "../theme/mapStyle";
 import { useRoute, RouteProp } from "@react-navigation/native";
 import { colors, radius, spacing, typography } from "../theme";
-import { polylineToMapRegion } from "../lib/gps";
+import { polylineToMapRegion, MAP_FIT_TIGHT, formatDistance, formatDuration, formatPace } from "../lib/gps";
 import { RunPhotoThumbnail } from "../components/RunPhotoThumbnail";
 import { ProfileStackHeader } from "../components/ProfileStackHeader";
 import { getActivityIcon, getActivityColor } from "../constants/activity";
@@ -15,14 +15,26 @@ import type { ActivityDisplay } from "../types/domain";
 
 type ActivityDetailRouteProp = RouteProp<RootStackParamList, "ActivityDetail">;
 
+const DETAIL_MAP_HEIGHT = 280;
+
 export default function ActivityDetailScreen(): React.ReactElement {
+  const { width } = useWindowDimensions();
   const route = useRoute<ActivityDetailRouteProp>();
   const { activity } = route.params;
   const run = activity.run;
   const routeCoords =
     run?.route_polyline?.length &&
     run.route_polyline.map(([lat, lng]) => ({ latitude: lat, longitude: lng }));
-  const mapRegion = run?.route_polyline?.length ? polylineToMapRegion(run.route_polyline, 1.8) : null;
+  const mapAspect = (width - 2 * spacing.lg) / DETAIL_MAP_HEIGHT;
+  const mapRegion = run?.route_polyline?.length ? polylineToMapRegion(run.route_polyline, MAP_FIT_TIGHT, mapAspect) : null;
+
+  /** Pace in m/s: from avg_pace (min/km) or distance/duration */
+  const paceMps =
+    run != null && run.duration > 0
+      ? run.avg_pace != null
+        ? 1000 / (run.avg_pace * 60)
+        : run.distance / run.duration
+      : 0;
 
   const Icon = getActivityIcon(activity.type);
   const color = getActivityColor(activity.type);
@@ -52,6 +64,31 @@ export default function ActivityDetailScreen(): React.ReactElement {
 
         {run ? (
           <>
+            {(run.distance > 0 || run.duration > 0) ? (
+              <GlassCard style={styles.section}>
+                <Text style={styles.sectionLabel}>Run stats</Text>
+                <View style={styles.statsRow}>
+                  {run.distance > 0 ? (
+                    <View style={styles.stat}>
+                      <Text style={styles.statValue}>{formatDistance(run.distance)}</Text>
+                      <Text style={styles.statLabel}>Distance</Text>
+                    </View>
+                  ) : null}
+                  {run.duration > 0 ? (
+                    <View style={styles.stat}>
+                      <Text style={styles.statValue}>{formatDuration(run.duration)}</Text>
+                      <Text style={styles.statLabel}>Duration</Text>
+                    </View>
+                  ) : null}
+                  {paceMps > 0 ? (
+                    <View style={styles.stat}>
+                      <Text style={styles.statValue}>{formatPace(paceMps)}<Text style={styles.statUnit}>/km</Text></Text>
+                      <Text style={styles.statLabel}>Pace</Text>
+                    </View>
+                  ) : null}
+                </View>
+              </GlassCard>
+            ) : null}
             {(run.name || run.description) ? (
               <GlassCard style={styles.section}>
                 {run.name ? <Text style={styles.runName}>{run.name}</Text> : null}
@@ -76,14 +113,14 @@ export default function ActivityDetailScreen(): React.ReactElement {
                     style={styles.detailMap}
                     provider={PROVIDER_DEFAULT}
                     initialRegion={mapRegion}
-                    scrollEnabled={false}
-                    zoomEnabled={false}
+                    scrollEnabled
+                    zoomEnabled
                     pitchEnabled={false}
                     userInterfaceStyle="dark"
                     mapType={Platform.OS === "android" ? "none" : "mutedStandard"}
                     {...(Platform.OS === "android" && { customMapStyle: darkMapStyle })}
                   >
-                    <Polyline coordinates={routeCoords} strokeColor={colors.primary} strokeWidth={4} />
+                    <Polyline coordinates={routeCoords} strokeColor={colors.primary} strokeWidth={5} lineCap="round" lineJoin="round" />
                   </MapView>
                 </View>
               </GlassCard>
@@ -98,22 +135,22 @@ export default function ActivityDetailScreen(): React.ReactElement {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
-  scrollContent: { padding: spacing.lg, paddingBottom: 40 },
+  scrollContent: { padding: spacing.lg, paddingBottom: 48 },
   card: {
     overflow: "hidden",
     borderRadius: radius.lg,
-    padding: spacing.lg,
+    padding: spacing.xl,
     marginBottom: spacing.lg,
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
-  cardUrgent: { borderLeftWidth: 3, borderLeftColor: colors.enemy },
+  cardUrgent: { borderLeftWidth: 4, borderLeftColor: colors.enemy },
   headerRow: { flexDirection: "row", alignItems: "flex-start" },
   iconWrap: { marginRight: spacing.md },
   titleWrap: { flex: 1, minWidth: 0 },
-  title: { fontSize: 18, fontWeight: "700", color: colors.foreground, fontFamily: typography.display },
-  time: { fontSize: 12, color: colors.mutedForeground, marginTop: 4 },
-  description: { fontSize: 14, color: colors.mutedForeground, marginTop: spacing.md, lineHeight: 20 },
+  title: { fontSize: 20, fontWeight: "700", color: colors.foreground, fontFamily: typography.display },
+  time: { fontSize: 13, color: colors.mutedForeground, marginTop: 4 },
+  description: { fontSize: 14, color: colors.mutedForeground, marginTop: spacing.md, lineHeight: 22 },
   section: {
     overflow: "hidden",
     borderRadius: radius.lg,
@@ -124,14 +161,20 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 11,
-    fontWeight: "600",
+    fontWeight: "700",
     color: colors.mutedForeground,
-    letterSpacing: 1,
+    letterSpacing: 1.5,
     marginBottom: spacing.sm,
   },
+  statsRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xl },
+  stat: { minWidth: 72 },
+  statValue: { fontSize: 18, fontWeight: "700", color: colors.foreground, fontFamily: typography.display },
+  statUnit: { fontSize: 14, fontWeight: "600", color: colors.mutedForeground },
+  statLabel: { fontSize: 12, color: colors.mutedForeground, marginTop: 2 },
   runName: { fontSize: 16, fontWeight: "600", color: colors.foreground },
   runDesc: { fontSize: 14, color: colors.mutedForeground, marginTop: 4, lineHeight: 20 },
   photoRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  mapWrap: { height: 220, borderRadius: radius.sm, overflow: "hidden", backgroundColor: colors.secondary },
-  detailMap: { flex: 1, width: "100%", height: "100%" },
+  /* Fixed height for all runs; only the region (zoom) inside adapts to the route. */
+  mapWrap: { height: DETAIL_MAP_HEIGHT, borderRadius: radius.md, overflow: "hidden", backgroundColor: colors.secondary },
+  detailMap: { ...StyleSheet.absoluteFillObject, borderRadius: radius.md },
 });

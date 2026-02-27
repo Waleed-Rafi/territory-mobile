@@ -51,6 +51,13 @@ export interface RunSummary {
   description: string | null;
   photo_urls: string[] | null;
   route_polyline: [number, number][] | null;
+  /** Distance in meters */
+  distance: number;
+  /** Duration in seconds */
+  duration: number;
+  /** Avg pace: min per km (e.g. 5.5 = 5:30/km). Null if not set. */
+  avg_pace: number | null;
+  started_at: string | null;
 }
 
 /** Activity fields we display in the feed */

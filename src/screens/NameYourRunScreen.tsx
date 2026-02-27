@@ -8,6 +8,7 @@ import {
   ScrollView,
   Image,
   Platform,
+  useWindowDimensions,
 } from "react-native";
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
 import { useRoute, useNavigation } from "@react-navigation/native";
@@ -21,7 +22,7 @@ import { Loader } from "../components/Loaders";
 import { colors, radius, spacing, typography } from "../theme";
 import { darkMapStyle } from "../theme/mapStyle";
 import { strings } from "../l10n/strings";
-import { polylineToMapRegion } from "../lib/gps";
+import { polylineToMapRegion, MAP_FIT_TIGHT } from "../lib/gps";
 import type { RootStackParamList } from "../types/navigation";
 import type { ActivityInsert } from "../types/database";
 import { ActivityType } from "../types/domain";
@@ -36,7 +37,10 @@ function defaultRunName(): string {
   return "Evening run";
 }
 
+const NAME_RUN_MAP_HEIGHT = 160;
+
 export default function NameYourRunScreen(): React.ReactElement {
+  const { width } = useWindowDimensions();
   const route = useRoute<RouteProp>();
   const navigation = useNavigation<NavProp>();
   const { user } = useAuth();
@@ -48,14 +52,15 @@ export default function NameYourRunScreen(): React.ReactElement {
   const [photoUris, setPhotoUris] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
+  const mapAspect = (width - 2 * spacing.lg) / NAME_RUN_MAP_HEIGHT;
   const routeCoords = useMemo(
     () =>
       routePolyline.map(([lat, lng]) => ({ latitude: lat, longitude: lng })),
     [routePolyline]
   );
   const mapRegion = useMemo(
-    () => polylineToMapRegion(routePolyline, 1.5),
-    [routePolyline]
+    () => polylineToMapRegion(routePolyline, MAP_FIT_TIGHT, mapAspect),
+    [routePolyline, mapAspect]
   );
 
   const pickImage = async () => {
@@ -337,15 +342,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   mapWrap: {
-    height: 160,
+    height: NAME_RUN_MAP_HEIGHT,
     borderRadius: radius.md,
     overflow: "hidden",
     backgroundColor: colors.secondary,
     marginBottom: spacing.xl,
   },
-  map: {
-    ...StyleSheet.absoluteFillObject,
-  },
+  /* Fixed height; only the region (zoom) inside adapts to the route. */
+  map: StyleSheet.absoluteFillObject,
   saveBtn: {
     backgroundColor: colors.primary,
     borderRadius: radius.md,

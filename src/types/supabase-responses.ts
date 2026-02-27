@@ -86,11 +86,18 @@ function parseRunSummary(r: unknown): RunSummary | null {
   const arr = Array.isArray(photoUrls) ? photoUrls : [];
   const poly = o.route_polyline as [number, number][] | unknown;
   const routePolyline = Array.isArray(poly) ? poly : null;
+  const distance = Number(o.distance) || 0;
+  const duration = Number(o.duration) || 0;
+  const avgPace = o.avg_pace != null && typeof o.avg_pace === "number" ? o.avg_pace : null;
   return {
     name: (o.name as string | null) ?? null,
     description: (o.description as string | null) ?? null,
     photo_urls: arr.length ? arr : null,
     route_polyline: routePolyline,
+    distance,
+    duration,
+    avg_pace: avgPace,
+    started_at: (o.started_at as string | null) ?? null,
   };
 }
 
