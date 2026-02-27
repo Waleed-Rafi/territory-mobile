@@ -12,7 +12,6 @@ import {
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import * as ImagePicker from "expo-image-picker";
 import { Camera, X } from "lucide-react-native";
 import { ProfileStackHeader } from "../components/ProfileStackHeader";
 import { useAuth } from "../contexts/AuthContext";
@@ -60,18 +59,26 @@ export default function NameYourRunScreen(): React.ReactElement {
   );
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      alert.show("Permission needed", "Allow photo access to add run photos.");
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsMultipleSelection: true,
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets.length) {
-      setPhotoUris((prev) => [...prev, ...result.assets.map((a) => a.uri)]);
+    try {
+      const ImagePicker = await import("expo-image-picker");
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        alert.show("Permission needed", "Allow photo access to add run photos.");
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsMultipleSelection: true,
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets.length) {
+        setPhotoUris((prev) => [...prev, ...result.assets.map((a) => a.uri)]);
+      }
+    } catch {
+      alert.show(
+        "Photo picker unavailable",
+        "Use the Territory app you built with “npx expo run:android” (not Expo Go) to add photos."
+      );
     }
   };
 

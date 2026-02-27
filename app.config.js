@@ -9,6 +9,7 @@ export default ({ config }) => ({
     ...config.expo,
     android: {
       ...config.expo?.android,
+      package: config.expo?.android?.package ?? "com.territory.app",
       config: {
         ...config.expo?.android?.config,
         ...(googleMapsApiKey && {
