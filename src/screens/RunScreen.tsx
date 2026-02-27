@@ -26,6 +26,7 @@ import {
   formatPace,
 } from "../lib/gps";
 import { colors, radius, spacing, typography } from "../theme";
+import { darkMapStyle } from "../theme/mapStyle";
 import { strings } from "../l10n/strings";
 import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
@@ -185,12 +186,6 @@ export default function RunScreen(): React.ReactElement {
     }
   };
 
-  const darkMapStyle = [
-    { elementType: "geometry", stylers: [{ color: "#0f1729" }] },
-    { elementType: "labels.text.fill", stylers: [{ color: "#64748b" }] },
-    { elementType: "labels.text.stroke", stylers: [{ color: "#0f1729" }] },
-  ];
-
   return (
     <View style={styles.container}>
       <View style={styles.mapContainer}>
@@ -206,6 +201,7 @@ export default function RunScreen(): React.ReactElement {
           }}
           showsUserLocation
           showsMyLocationButton={false}
+          userInterfaceStyle="dark"
           mapType={Platform.OS === "android" ? "none" : "mutedStandard"}
           {...(Platform.OS === "android" && { customMapStyle: darkMapStyle })}
         >

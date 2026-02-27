@@ -9,6 +9,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../supabase/client";
 import { Loader } from "../components/Loaders";
 import { colors, radius, spacing, typography } from "../theme";
+import { darkMapStyle } from "../theme/mapStyle";
 import { strings } from "../l10n/strings";
 import type { TerritoryMapItem } from "../types/domain";
 import type { MapScreenNavigationProp } from "../types/navigation";
@@ -215,6 +216,7 @@ export default function MapScreen(): React.ReactElement {
         showsUserLocation
         showsMyLocationButton={false}
         followsUserLocation={false}
+        userInterfaceStyle="dark"
         mapType={Platform.OS === "android" ? "none" : "mutedStandard"}
         {...(Platform.OS === "android" && { customMapStyle: darkMapStyle })}
       >
@@ -294,12 +296,6 @@ export default function MapScreen(): React.ReactElement {
     </View>
   );
 }
-
-const darkMapStyle = [
-  { elementType: "geometry", stylers: [{ color: "#0f1729" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#64748b" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#0f1729" }] },
-];
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },

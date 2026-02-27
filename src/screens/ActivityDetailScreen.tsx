@@ -1,7 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Platform } from "react-native";
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
 import { GlassCard } from "../components/GlassCard";
+import { darkMapStyle } from "../theme/mapStyle";
 import { useRoute, RouteProp } from "@react-navigation/native";
 import { colors, radius, spacing, typography } from "../theme";
 import { polylineToMapRegion } from "../lib/gps";
@@ -78,6 +79,9 @@ export default function ActivityDetailScreen(): React.ReactElement {
                     scrollEnabled={false}
                     zoomEnabled={false}
                     pitchEnabled={false}
+                    userInterfaceStyle="dark"
+                    mapType={Platform.OS === "android" ? "none" : "mutedStandard"}
+                    {...(Platform.OS === "android" && { customMapStyle: darkMapStyle })}
                   >
                     <Polyline coordinates={routeCoords} strokeColor={colors.primary} strokeWidth={4} />
                   </MapView>

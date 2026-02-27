@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Platform } from "react-native";
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
 import { GlassCard } from "../components/GlassCard";
+import { darkMapStyle } from "../theme/mapStyle";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuth } from "../contexts/AuthContext";
@@ -128,6 +129,9 @@ export default function ActivityScreen(): React.ReactElement {
                   scrollEnabled={false}
                   zoomEnabled={false}
                   pitchEnabled={false}
+                  userInterfaceStyle="dark"
+                  mapType={Platform.OS === "android" ? "none" : "mutedStandard"}
+                  {...(Platform.OS === "android" && { customMapStyle: darkMapStyle })}
                 >
                   <Polyline coordinates={routeCoords} strokeColor={colors.primary} strokeWidth={3} />
                 </MapView>

@@ -20,6 +20,7 @@ import { useAlert } from "../contexts/AlertContext";
 import { supabase } from "../supabase/client";
 import { Loader } from "../components/Loaders";
 import { colors, radius, spacing, typography } from "../theme";
+import { darkMapStyle } from "../theme/mapStyle";
 import { strings } from "../l10n/strings";
 import { polylineToMapRegion } from "../lib/gps";
 import type { RootStackParamList } from "../types/navigation";
@@ -212,6 +213,9 @@ export default function NameYourRunScreen(): React.ReactElement {
               scrollEnabled={false}
               zoomEnabled={false}
               pitchEnabled={false}
+              userInterfaceStyle="dark"
+              mapType={Platform.OS === "android" ? "none" : "mutedStandard"}
+              {...(Platform.OS === "android" && { customMapStyle: darkMapStyle })}
             >
               <Polyline coordinates={routeCoords} strokeColor={colors.primary} strokeWidth={4} />
             </MapView>
