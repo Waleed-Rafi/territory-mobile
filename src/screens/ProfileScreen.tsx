@@ -11,7 +11,7 @@ import {
   Platform,
   RefreshControl,
 } from "react-native";
-import { Shield, Flame, MapPin, TrendingUp, LogOut, Bell, ChevronRight, Trophy, Target, Calendar, FileText, Info, Zap } from "lucide-react-native";
+import { Shield, Flame, MapPin, TrendingUp, LogOut, Bell, ChevronRight, Trophy, Target, Calendar, FileText, Info, Zap, Award, History, Lightbulb } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { GlassCard } from "../components/GlassCard";
 import { useNavigation } from "@react-navigation/native";
@@ -213,6 +213,50 @@ export default function ProfileScreen(): React.ReactElement {
           </View>
         </GlassCard>
       )}
+
+      <View style={styles.tipsWrap}>
+        <View style={styles.tipsHeader}>
+          <Lightbulb size={16} stroke={colors.primary} />
+          <Text style={styles.tipsTitle}>{strings.profile.gettingStarted}</Text>
+        </View>
+        <Text style={styles.tipsItem}>• Run a closed loop of 100m+ to claim territory on the map.</Text>
+        <Text style={styles.tipsItem}>• Set a weekly goal and run reminders to build a habit.</Text>
+        <Text style={styles.tipsItem}>• Track your personal records and run history from Profile.</Text>
+      </View>
+
+      <TouchableOpacity
+        onPress={() => rootNav?.navigate("PersonalRecords")}
+        style={styles.remindersRow}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="View personal records"
+      >
+        <GlassCard style={styles.remindersCard}>
+          <Award size={18} stroke={colors.primary} style={styles.remindersIcon} />
+          <View style={styles.remindersTextWrap}>
+            <Text style={styles.remindersTitle}>{strings.profile.personalRecords}</Text>
+            <Text style={styles.remindersSub}>{strings.profile.personalRecordsHint}</Text>
+          </View>
+          <ChevronRight size={20} stroke={colors.mutedForeground} />
+        </GlassCard>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => rootNav?.navigate("RunHistory")}
+        style={styles.remindersRow}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="View run history"
+      >
+        <GlassCard style={styles.remindersCard}>
+          <History size={18} stroke={colors.primary} style={styles.remindersIcon} />
+          <View style={styles.remindersTextWrap}>
+            <Text style={styles.remindersTitle}>{strings.profile.runHistory}</Text>
+            <Text style={styles.remindersSub}>{strings.profile.runHistoryHint}</Text>
+          </View>
+          <ChevronRight size={20} stroke={colors.mutedForeground} />
+        </GlassCard>
+      </TouchableOpacity>
 
       <TouchableOpacity
         onPress={openGoalModal}
@@ -455,6 +499,17 @@ const styles = StyleSheet.create({
   streakTextWrap: { marginLeft: spacing.md },
   streakTitle: { fontSize: 16, fontWeight: "700", color: colors.foreground },
   streakSub: { fontSize: 12, color: colors.mutedForeground, marginTop: 2 },
+  tipsWrap: {
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    backgroundColor: colors.glassBg,
+  },
+  tipsHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: spacing.sm },
+  tipsTitle: { fontSize: 13, fontWeight: "700", color: colors.foreground },
+  tipsItem: { fontSize: 12, color: colors.mutedForeground, lineHeight: 20, marginTop: 2 },
   remindersRow: { marginBottom: spacing.md },
   remindersCard: {
     overflow: "hidden",

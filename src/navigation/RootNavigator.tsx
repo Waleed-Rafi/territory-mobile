@@ -10,6 +10,8 @@ import TermsScreen from "../screens/TermsScreen";
 import AboutScreen from "../screens/AboutScreen";
 import ActivityDetailScreen from "../screens/ActivityDetailScreen";
 import LevelProgressionScreen from "../screens/LevelProgressionScreen";
+import PersonalRecordsScreen from "../screens/PersonalRecordsScreen";
+import RunHistoryScreen from "../screens/RunHistoryScreen";
 import { Loader } from "../components/Loaders";
 import { colors, typography } from "../theme";
 import type { RootStackParamList } from "../types/navigation";
@@ -47,6 +49,8 @@ export default function RootNavigator(): React.ReactElement {
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="ActivityDetail" component={ActivityDetailScreen} />
       <Stack.Screen name="LevelProgression" component={LevelProgressionScreen} />
+      <Stack.Screen name="PersonalRecords" component={PersonalRecordsScreen} />
+      <Stack.Screen name="RunHistory" component={RunHistoryScreen} />
     </Stack.Navigator>
   );
 }

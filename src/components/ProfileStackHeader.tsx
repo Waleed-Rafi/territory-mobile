@@ -6,10 +6,12 @@ import { colors, spacing, typography } from "../theme";
 
 export interface ProfileStackHeaderProps {
   title: string;
+  /** Optional right-side element (e.g. Share button). */
+  rightElement?: React.ReactNode;
 }
 
 /** Shared header for screens opened from Profile stack: back button + title. Matches Run Reminder screen style. */
-export function ProfileStackHeader({ title }: ProfileStackHeaderProps): React.ReactElement {
+export function ProfileStackHeader({ title, rightElement }: ProfileStackHeaderProps): React.ReactElement {
   const navigation = useNavigation();
 
   return (
@@ -23,6 +25,7 @@ export function ProfileStackHeader({ title }: ProfileStackHeaderProps): React.Re
         <ChevronLeft size={24} stroke={colors.foreground} />
       </TouchableOpacity>
       <Text style={styles.headerTitle}>{title}</Text>
+      {rightElement ? <View style={styles.rightSlot}>{rightElement}</View> : null}
     </View>
   );
 }
@@ -45,5 +48,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.foreground,
     letterSpacing: 1,
+  },
+  rightSlot: {
+    marginLeft: "auto",
+    flexDirection: "row",
+    alignItems: "center",
   },
 });

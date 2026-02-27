@@ -26,7 +26,7 @@ export type LevelProgressionParams = {
   profile?: ProfileDisplay;
 };
 
-/** Root stack: Auth when unauthenticated; Main + RunReminder + NameYourRun + Terms + About + ActivityDetail + LevelProgression when authenticated */
+/** Root stack: Auth when unauthenticated; Main + RunReminder + NameYourRun + Terms + About + ActivityDetail + LevelProgression + PersonalRecords + RunHistory when authenticated */
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
@@ -36,6 +36,8 @@ export type RootStackParamList = {
   About: undefined;
   ActivityDetail: ActivityDetailParams;
   LevelProgression: LevelProgressionParams;
+  PersonalRecords: undefined;
+  RunHistory: undefined;
 };
 
 /** Main tab screens (authenticated) */

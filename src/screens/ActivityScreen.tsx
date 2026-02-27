@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Platform, useWindowDimensions } from "react-native";
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
+import { Share2 } from "lucide-react-native";
 import { GlassCard } from "../components/GlassCard";
 import { darkMapStyle } from "../theme/mapStyle";
 import { useNavigation } from "@react-navigation/native";
@@ -14,6 +15,7 @@ import type { ActivityDisplay } from "../types/domain";
 import { parseActivityList } from "../types/supabase-responses";
 import type { RootStackParamList } from "../types/navigation";
 import { RunPhotoThumbnail } from "../components/RunPhotoThumbnail";
+import { ShareActivityModal } from "../components/ShareActivityModal";
 import { polylineToMapRegion, MAP_FIT_TIGHT, formatDistance, formatDuration, formatPace } from "../lib/gps";
 import { getActivityIcon, getActivityColor } from "../constants/activity";
 import { timeAgo } from "../utils/format";
@@ -46,6 +48,7 @@ export default function ActivityScreen(): React.ReactElement {
   const [activities, setActivities] = useState<ActivityDisplay[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [shareActivity, setShareActivity] = useState<ActivityDisplay | null>(null);
   const mapAspect = (width - 2 * spacing.lg) / CARD_MAP_HEIGHT;
 
   const loadActivities = useCallback(async () => {
@@ -124,6 +127,15 @@ export default function ActivityScreen(): React.ReactElement {
               <Text style={styles.cardTitle}>{item.title}</Text>
               <Text style={styles.cardTime}>{timeAgo(item.created_at)}</Text>
             </View>
+            <TouchableOpacity
+              onPress={() => setShareActivity(item)}
+              style={styles.cardShareBtn}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel={strings.activity.shareA11y}
+            >
+              <Share2 size={20} color={colors.mutedForeground} />
+            </TouchableOpacity>
           </View>
           {hasRunStats && run ? (
             <View style={styles.statsRow}>
@@ -168,6 +180,7 @@ export default function ActivityScreen(): React.ReactElement {
                   scrollEnabled={false}
                   zoomEnabled={false}
                   pitchEnabled={false}
+                  pointerEvents="none"
                   userInterfaceStyle="dark"
                   mapType={Platform.OS === "android" ? "none" : "mutedStandard"}
                   {...(Platform.OS === "android" && { customMapStyle: darkMapStyle })}
@@ -197,6 +210,13 @@ export default function ActivityScreen(): React.ReactElement {
 
   return (
     <View style={styles.container}>
+      {shareActivity ? (
+        <ShareActivityModal
+          visible
+          onClose={() => setShareActivity(null)}
+          activity={shareActivity}
+        />
+      ) : null}
       <View style={styles.headerRow}>
         <Text style={styles.header}>{strings.activity.title}</Text>
         {activities.length > 0 ? (
@@ -254,6 +274,7 @@ const styles = StyleSheet.create({
   cardTop: { flexDirection: "row", alignItems: "flex-start", marginBottom: spacing.xs },
   cardIcon: { marginRight: spacing.md },
   cardMeta: { flex: 1, minWidth: 0 },
+  cardShareBtn: { padding: spacing.xs },
   cardContent: { flex: 1, minWidth: 0 },
   cardTitle: { fontSize: 15, fontWeight: "700", color: colors.foreground },
   cardDesc: { fontSize: 13, color: colors.mutedForeground, marginTop: spacing.sm, lineHeight: 20 },

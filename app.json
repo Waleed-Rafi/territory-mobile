@@ -17,7 +17,8 @@
       "bundleIdentifier": "com.territory.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Territory needs location to track your runs and show the map.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Territory uses location to record your run and claim territory."
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Territory uses location to record your run and claim territory.",
+        "NSPhotoLibraryAddUsageDescription": "Territory saves your activity share card to your photo library when you tap Save to photos."
       }
     },
     "android": {

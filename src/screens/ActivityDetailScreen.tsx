@@ -1,6 +1,7 @@
-import React from "react";
-import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions } from "react-native";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, ScrollView, Platform, useWindowDimensions, TouchableOpacity } from "react-native";
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
+import { Share2 } from "lucide-react-native";
 import { GlassCard } from "../components/GlassCard";
 import { darkMapStyle } from "../theme/mapStyle";
 import { useRoute, RouteProp } from "@react-navigation/native";
@@ -8,8 +9,10 @@ import { colors, radius, spacing, typography } from "../theme";
 import { polylineToMapRegion, MAP_FIT_TIGHT, formatDistance, formatDuration, formatPace } from "../lib/gps";
 import { RunPhotoThumbnail } from "../components/RunPhotoThumbnail";
 import { ProfileStackHeader } from "../components/ProfileStackHeader";
+import { ShareActivityModal } from "../components/ShareActivityModal";
 import { getActivityIcon, getActivityColor } from "../constants/activity";
 import { timeAgo } from "../utils/format";
+import { strings } from "../l10n/strings";
 import type { RootStackParamList } from "../types/navigation";
 import type { ActivityDisplay } from "../types/domain";
 
@@ -38,10 +41,28 @@ export default function ActivityDetailScreen(): React.ReactElement {
 
   const Icon = getActivityIcon(activity.type);
   const color = getActivityColor(activity.type);
+  const [shareModalVisible, setShareModalVisible] = useState(false);
 
   return (
     <View style={styles.container}>
-      <ProfileStackHeader title="Activity" />
+      <ProfileStackHeader
+        title="Activity"
+        rightElement={
+          <TouchableOpacity
+            onPress={() => setShareModalVisible(true)}
+            style={styles.shareButton}
+            accessibilityRole="button"
+            accessibilityLabel={strings.activity.shareA11y}
+          >
+            <Share2 size={22} color={colors.foreground} />
+          </TouchableOpacity>
+        }
+      />
+      <ShareActivityModal
+        visible={shareModalVisible}
+        onClose={() => setShareModalVisible(false)}
+        activity={activity}
+      />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -113,9 +134,10 @@ export default function ActivityDetailScreen(): React.ReactElement {
                     style={styles.detailMap}
                     provider={PROVIDER_DEFAULT}
                     initialRegion={mapRegion}
-                    scrollEnabled
-                    zoomEnabled
+                    scrollEnabled={false}
+                    zoomEnabled={false}
                     pitchEnabled={false}
+                    pointerEvents="none"
                     userInterfaceStyle="dark"
                     mapType={Platform.OS === "android" ? "none" : "mutedStandard"}
                     {...(Platform.OS === "android" && { customMapStyle: darkMapStyle })}
@@ -136,6 +158,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   scrollContent: { padding: spacing.lg, paddingBottom: 48 },
+  shareButton: { padding: spacing.sm },
   card: {
     overflow: "hidden",
     borderRadius: radius.lg,
