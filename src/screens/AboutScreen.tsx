@@ -1,7 +1,10 @@
 import React from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ProfileStackHeader } from "../components/ProfileStackHeader";
 import { useAuth } from "../contexts/AuthContext";
+import type { RootStackParamList } from "../types/navigation";
 import { useAlert } from "../contexts/AlertContext";
 import { supabase } from "../supabase/client";
 import Constants from "expo-constants";
@@ -10,9 +13,13 @@ import { colors, spacing, typography } from "../theme";
 /** Replace with your real support email before store submission. */
 const SUPPORT_EMAIL = "support@territory.app";
 
+/** Official privacy policy URL – hosted on territory-runner (e.g. territoryy.netlify.app). */
+const PRIVACY_POLICY_URL = "https://territoryy.netlify.app/privacy";
+
 export default function AboutScreen(): React.ReactElement {
   const { user, signOut } = useAuth();
   const alert = useAlert();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, "About">>();
 
   const handleDeactivateAccount = async () => {
     const idx = await alert.showAsync({
@@ -53,78 +60,19 @@ export default function AboutScreen(): React.ReactElement {
       </Text>
 
       <Text style={styles.title}>Privacy Policy</Text>
-      <Text style={styles.updated}>Last updated: February 2025</Text>
-
-      <Text style={styles.heading}>1. Information We Collect</Text>
       <Text style={styles.body}>
-        We collect information you provide directly: account details (email, username, display name),
-        run data (GPS routes, distance, duration, timestamps), optional run names and descriptions, and
-        photos you attach to runs. We also collect device-related information necessary to provide the
-        service (e.g. for push notifications and app stability). We do not sell your personal information.
+        Our full privacy policy is available on the web. You can read it anytime at the link below.
       </Text>
+      <TouchableOpacity
+        onPress={() => navigation.navigate("WebView", { url: PRIVACY_POLICY_URL, title: "Privacy Policy" })}
+        style={styles.linkButton}
+        accessibilityRole="button"
+        accessibilityLabel="Open privacy policy"
+      >
+        <Text style={styles.linkText}>View Privacy Policy</Text>
+      </TouchableOpacity>
 
-      <Text style={styles.heading}>2. How We Use Your Information</Text>
-      <Text style={styles.body}>
-        We use your information to provide and improve the App: to create and manage your account, to store
-        and display your runs and territory data, to send you reminders if you enable them, to show your
-        activity in the feed, and to compute stats such as streaks and weekly goals. We may use aggregated,
-        non-identifying data to improve the product.
-      </Text>
-
-      <Text style={styles.heading}>3. Data Storage and Security</Text>
-      <Text style={styles.body}>
-        Your data is stored on secure servers provided by Supabase (database and authentication) and, for
-        run photos, in Supabase Storage. Data is transmitted over HTTPS. We implement reasonable measures to
-        protect your data; no system is completely secure, and you use the App at your own risk.
-      </Text>
-
-      <Text style={styles.heading}>4. Third-Party Services</Text>
-      <Text style={styles.body}>
-        The App uses the following third-party services: Supabase (authentication, database, storage),
-        Expo (app framework, notifications, device APIs), and platform services (Apple/Google for sign-in
-        and push notifications where applicable). These providers have their own privacy policies. We do not
-        control and are not responsible for their practices. By using the App you acknowledge use of these
-        services.
-      </Text>
-
-      <Text style={styles.heading}>5. Data Retention</Text>
-      <Text style={styles.body}>
-        We retain your account and run data for as long as your account is active. If you deactivate your
-        account, we retain your data in inactive state; you may reactivate by signing in again. If you request
-        account or data deletion, we will delete or anonymize your data in accordance with applicable law and
-        our retention policy.
-      </Text>
-
-      <Text style={styles.heading}>6. Your Rights</Text>
-      <Text style={styles.body}>
-        Depending on your jurisdiction, you may have the right to access, correct, or delete your personal
-        data, to object to or restrict processing, and to data portability. You can update profile information
-        and run data within the App. To request deletion or exercise other rights, contact us using the
-        information below. You may also deactivate your account from this screen.
-      </Text>
-
-      <Text style={styles.heading}>7. Children's Privacy</Text>
-      <Text style={styles.body}>
-        The App is not directed at children under 13 (or higher age where required). We do not knowingly
-        collect personal information from children. If you believe we have collected such information, please
-        contact us and we will take steps to delete it.
-      </Text>
-
-      <Text style={styles.heading}>8. International Transfer</Text>
-      <Text style={styles.body}>
-        Your data may be processed and stored in countries other than your own. By using the App you consent
-        to such transfer. We take steps to ensure your data receives an adequate level of protection
-        where required by law.
-      </Text>
-
-      <Text style={styles.heading}>9. Changes to This Policy</Text>
-      <Text style={styles.body}>
-        We may update this Privacy Policy from time to time. We will update the "Last updated" date and, where
-        appropriate, notify you in the App. Your continued use after changes constitutes acceptance of the
-        updated policy.
-      </Text>
-
-      <Text style={styles.heading}>10. Contact Us</Text>
+      <Text style={styles.heading}>Contact</Text>
       <Text style={styles.body}>
         For privacy questions, data requests, or support, contact us at:
       </Text>
@@ -168,19 +116,20 @@ const styles = StyleSheet.create({
     color: colors.foreground,
     marginBottom: spacing.xs,
   },
-  updated: { fontSize: 12, color: colors.mutedForeground, marginBottom: spacing.lg },
+  body: {
+    fontSize: 14,
+    color: colors.secondaryForeground,
+    lineHeight: 22,
+    marginBottom: spacing.sm,
+  },
+  linkButton: { marginBottom: spacing.lg },
+  linkText: { fontSize: 14, color: colors.primary, textDecorationLine: "underline", fontWeight: "600" },
   heading: {
     fontFamily: typography.display,
     fontSize: 14,
     fontWeight: "700",
     color: colors.primary,
     marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  body: {
-    fontSize: 14,
-    color: colors.secondaryForeground,
-    lineHeight: 22,
     marginBottom: spacing.sm,
   },
   supportLink: { marginTop: spacing.sm },

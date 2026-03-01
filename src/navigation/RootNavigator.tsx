@@ -8,6 +8,7 @@ import RunReminderScreen from "../screens/RunReminderScreen";
 import NameYourRunScreen from "../screens/NameYourRunScreen";
 import TermsScreen from "../screens/TermsScreen";
 import AboutScreen from "../screens/AboutScreen";
+import WebViewScreen from "../screens/WebViewScreen";
 import ActivityDetailScreen from "../screens/ActivityDetailScreen";
 import LevelProgressionScreen from "../screens/LevelProgressionScreen";
 import PersonalRecordsScreen from "../screens/PersonalRecordsScreen";
@@ -47,6 +48,7 @@ export default function RootNavigator(): React.ReactElement {
       <Stack.Screen name="NameYourRun" component={NameYourRunScreen} />
       <Stack.Screen name="Terms" component={TermsScreen} />
       <Stack.Screen name="About" component={AboutScreen} />
+      <Stack.Screen name="WebView" component={WebViewScreen} />
       <Stack.Screen name="ActivityDetail" component={ActivityDetailScreen} />
       <Stack.Screen name="LevelProgression" component={LevelProgressionScreen} />
       <Stack.Screen name="PersonalRecords" component={PersonalRecordsScreen} />

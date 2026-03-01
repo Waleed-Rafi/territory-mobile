@@ -26,7 +26,13 @@ export type LevelProgressionParams = {
   profile?: ProfileDisplay;
 };
 
-/** Root stack: Auth when unauthenticated; Main + RunReminder + NameYourRun + Terms + About + ActivityDetail + LevelProgression + PersonalRecords + RunHistory when authenticated */
+/** Params for in-app WebView (e.g. privacy policy) */
+export type WebViewParams = {
+  url: string;
+  title?: string;
+};
+
+/** Root stack: Auth when unauthenticated; Main + RunReminder + NameYourRun + Terms + About + WebView + ActivityDetail + LevelProgression + PersonalRecords + RunHistory when authenticated */
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
@@ -34,6 +40,7 @@ export type RootStackParamList = {
   NameYourRun: NameYourRunParams;
   Terms: undefined;
   About: undefined;
+  WebView: WebViewParams;
   ActivityDetail: ActivityDetailParams;
   LevelProgression: LevelProgressionParams;
   PersonalRecords: undefined;
