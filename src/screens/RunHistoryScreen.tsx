@@ -33,7 +33,7 @@ export default function RunHistoryScreen(): React.ReactElement {
     if (!user) return;
     const { data, error } = await supabase
       .from("activities")
-      .select("id, type, title, description, is_urgent, created_at, run_id, runs(name, description, photo_urls, route_polyline, distance, duration, avg_pace, started_at)")
+      .select("id, type, title, description, is_urgent, created_at, run_id, runs(name, description, photo_urls, route_polyline, distance, duration, avg_pace, elevation_gain, started_at)")
       .eq("user_id", user.id)
       .eq("type", "run_completed")
       .order("created_at", { ascending: false })

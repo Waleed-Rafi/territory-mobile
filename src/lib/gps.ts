@@ -4,6 +4,8 @@ export interface GpsPoint {
   timestamp: number;
   accuracy: number;
   speed: number | null;
+  /** Altitude in meters (from device GPS). Null if unavailable. */
+  altitude: number | null;
 }
 
 const MAX_SPEED_KMH = 25;
@@ -44,6 +46,21 @@ export function calculateTotalDistance(points: GpsPoint[]): number {
     );
   }
   return total;
+}
+
+/**
+ * Elevation gain in meters: sum of positive altitude differences between consecutive points.
+ * Points without altitude are skipped (no contribution to gain).
+ */
+export function calculateElevationGain(points: GpsPoint[]): number {
+  let gain = 0;
+  let prevAlt: number | null = null;
+  for (const p of points) {
+    const alt = p.altitude != null && Number.isFinite(p.altitude) ? p.altitude : null;
+    if (prevAlt != null && alt != null && alt > prevAlt) gain += alt - prevAlt;
+    if (alt != null) prevAlt = alt;
+  }
+  return gain;
 }
 
 /** Build a closed polygon from a slice of points (path from i to j, then back to i). */
@@ -195,6 +212,11 @@ export function formatPace(metersPerSecond: number): string {
   const mins = Math.floor(minPerKm);
   const secs = Math.round((minPerKm - mins) * 60);
   return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+
+export function formatElevation(meters: number): string {
+  if (!Number.isFinite(meters) || meters < 0) return "—";
+  return `${Math.round(meters)} m`;
 }
 
 /** Map region (center + deltas) for fitting a polyline in a MapView. */

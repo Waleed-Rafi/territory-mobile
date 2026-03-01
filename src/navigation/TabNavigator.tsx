@@ -7,12 +7,14 @@ import MapScreen from "../screens/MapScreen";
 import RunScreen from "../screens/RunScreen";
 import ActivityScreen from "../screens/ActivityScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+import { useOfflineSync } from "../hooks/useOfflineSync";
 import { colors, typography } from "../theme";
 import type { TabParamList } from "../types/navigation";
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
 export default function TabNavigator(): React.ReactElement {
+  useOfflineSync();
   return (
     <Tab.Navigator
       screenOptions={{

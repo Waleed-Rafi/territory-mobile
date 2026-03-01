@@ -89,6 +89,7 @@ function parseRunSummary(r: unknown): RunSummary | null {
   const distance = Number(o.distance) || 0;
   const duration = Number(o.duration) || 0;
   const avgPace = o.avg_pace != null && typeof o.avg_pace === "number" ? o.avg_pace : null;
+  const elevationGain = o.elevation_gain != null && typeof o.elevation_gain === "number" ? o.elevation_gain : null;
   return {
     name: (o.name as string | null) ?? null,
     description: (o.description as string | null) ?? null,
@@ -97,6 +98,7 @@ function parseRunSummary(r: unknown): RunSummary | null {
     distance,
     duration,
     avg_pace: avgPace,
+    elevation_gain: elevationGain,
     started_at: (o.started_at as string | null) ?? null,
   };
 }

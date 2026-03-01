@@ -6,7 +6,7 @@ import { GlassCard } from "../components/GlassCard";
 import { darkMapStyle } from "../theme/mapStyle";
 import { useRoute, RouteProp } from "@react-navigation/native";
 import { colors, radius, spacing, typography } from "../theme";
-import { polylineToMapRegion, MAP_FIT_TIGHT, formatDistance, formatDuration, formatPace } from "../lib/gps";
+import { polylineToMapRegion, MAP_FIT_TIGHT, formatDistance, formatDuration, formatPace, formatElevation } from "../lib/gps";
 import { RunPhotoThumbnail } from "../components/RunPhotoThumbnail";
 import { ProfileStackHeader } from "../components/ProfileStackHeader";
 import { ShareActivityModal } from "../components/ShareActivityModal";
@@ -104,7 +104,13 @@ export default function ActivityDetailScreen(): React.ReactElement {
                   {paceMps > 0 ? (
                     <View style={styles.stat}>
                       <Text style={styles.statValue}>{formatPace(paceMps)}<Text style={styles.statUnit}>/km</Text></Text>
-                      <Text style={styles.statLabel}>Pace</Text>
+                      <Text style={styles.statLabel}>Avg Pace</Text>
+                    </View>
+                  ) : null}
+                  {run.elevation_gain != null && run.elevation_gain > 0 ? (
+                    <View style={styles.stat}>
+                      <Text style={styles.statValue}>{formatElevation(run.elevation_gain)}</Text>
+                      <Text style={styles.statLabel}>Elevation</Text>
                     </View>
                   ) : null}
                 </View>

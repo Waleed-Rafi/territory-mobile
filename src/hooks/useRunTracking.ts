@@ -43,6 +43,7 @@ export function useRunTracking(): RunTrackingState {
         timestamp: initial.timestamp,
         accuracy: initial.coords.accuracy ?? 0,
         speed: initial.coords.speed ?? null,
+        altitude: initial.coords.altitude ?? null,
       };
       setPoints([firstPoint]);
       lastAddRef.current = Date.now();
@@ -64,6 +65,7 @@ export function useRunTracking(): RunTrackingState {
           timestamp: loc.timestamp,
           accuracy: loc.coords.accuracy ?? 0,
           speed: loc.coords.speed ?? null,
+          altitude: loc.coords.altitude ?? null,
         };
         setPoints((prev) => {
           const last = prev[prev.length - 1];

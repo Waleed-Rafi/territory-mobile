@@ -57,6 +57,8 @@ export interface RunSummary {
   duration: number;
   /** Avg pace: min per km (e.g. 5.5 = 5:30/km). Null if not set. */
   avg_pace: number | null;
+  /** Elevation gain in meters. Null if not set. */
+  elevation_gain: number | null;
   started_at: string | null;
 }
 

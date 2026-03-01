@@ -105,6 +105,7 @@ export interface RunRow {
   distance: number;
   duration: number;
   avg_pace: number | null;
+  elevation_gain: number | null;
   started_at: string;
   finished_at: string | null;
   territory_claimed: boolean;
@@ -122,6 +123,7 @@ export interface RunInsert {
   distance?: number;
   duration?: number;
   avg_pace?: number | null;
+  elevation_gain?: number | null;
   started_at?: string;
   finished_at?: string | null;
   territory_claimed?: boolean;

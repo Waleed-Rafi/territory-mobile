@@ -47,6 +47,10 @@ export const strings = {
     locationNotSet: "Location not set",
     runner: "Runner",
   },
+  offline: {
+    savedOffline: "Saved offline",
+    savedOfflineMessage: "Your run will sync when you're back online.",
+  },
   run: {
     startRun: "Start run",
     stopRun: "Stop run",

@@ -7,15 +7,18 @@ import {
   Platform,
 } from "react-native";
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
-import { Play, Square, MapPin, Ruler, Gauge, AlertTriangle, CheckCircle } from "lucide-react-native";
+import { Play, Square, MapPin, Ruler, Gauge, Mountain, AlertTriangle, CheckCircle } from "lucide-react-native";
 import { useAuth } from "../contexts/AuthContext";
 import { useAlert } from "../contexts/AlertContext";
 import { supabase } from "../supabase/client";
 import { useRunTracking } from "../hooks/useRunTracking";
+import { useOfflineSync } from "../hooks/useOfflineSync";
+import { addPendingRun, type PendingRun, type PendingTerritory } from "../utils/offlineQueue";
 import { Loader } from "../components/Loaders";
 import { cancelRunReminderFollowUp } from "../utils/runReminders";
 import {
   calculateTotalDistance,
+  calculateElevationGain,
   isClosedLoop,
   getClosedLoopPolygons,
   validateRun,
@@ -24,6 +27,7 @@ import {
   formatDistance,
   formatDuration,
   formatPace,
+  formatElevation,
 } from "../lib/gps";
 import { colors, radius, spacing, typography } from "../theme";
 import { darkMapStyle } from "../theme/mapStyle";
@@ -47,10 +51,12 @@ export default function RunScreen(): React.ReactElement {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<Date | null>(null);
 
+  const { isOnline } = useOfflineSync();
   const { tracking, points, currentPosition, error, startTracking, stopTracking } = useRunTracking();
   const mapRef = useRef<MapView | null>(null);
   const totalDistance = calculateTotalDistance(points);
   const avgSpeed = elapsed > 0 ? totalDistance / elapsed : 0;
+  const elevationGain = calculateElevationGain(points);
   const closedLoop = points.length > 10 && isClosedLoop(points);
 
   const routeCoordinates = points.map((p) => ({ latitude: p.lat, longitude: p.lng }));
@@ -110,19 +116,66 @@ export default function RunScreen(): React.ReactElement {
     const loopPolygons = getClosedLoopPolygons(points);
     const canClaimTerritory = loopPolygons.length > 0 && validation.valid;
 
+    const runData: RunInsert = {
+      user_id: user.id,
+      distance: totalDistance,
+      duration: elapsed,
+      avg_pace: avgSpeed > 0 ? 1000 / avgSpeed / 60 : null,
+      elevation_gain: Math.round(elevationGain),
+      gps_points: points as unknown as RunInsert["gps_points"],
+      route_polyline: points.map((p) => [p.lat, p.lng]),
+      is_valid: validation.valid,
+      territory_claimed: false,
+      started_at: startTimeRef.current?.toISOString(),
+      finished_at: new Date().toISOString(),
+    };
+
+    let claimedAreaSqKm: number | null = null;
+    const territoryCount = canClaimTerritory ? loopPolygons.length : 0;
+    if (canClaimTerritory) {
+      claimedAreaSqKm = loopPolygons.reduce((sum, p) => sum + calculatePolygonArea(p) / 1e6, 0);
+    }
+    const suggestedTitle = canClaimTerritory ? "New Territory Claimed!" : "Run Completed";
+    const suggestedDescription =
+      canClaimTerritory && claimedAreaSqKm != null
+        ? territoryCount > 1
+          ? `Claimed ${territoryCount} territories (${claimedAreaSqKm.toFixed(3)} km²) · ${formatDistance(totalDistance)} run`
+          : `Claimed ${claimedAreaSqKm.toFixed(3)} km² with a ${formatDistance(totalDistance)} run`
+        : `${formatDistance(totalDistance)} in ${formatDuration(elapsed)}`;
+
+    if (!isOnline) {
+      try {
+        const territories: PendingTerritory[] = loopPolygons.map((polygon) => {
+          const area = calculatePolygonArea(polygon);
+          const center = getPolygonCenter(polygon);
+          return {
+            owner_id: user.id,
+            polygon,
+            center_lat: center.lat,
+            center_lng: center.lng,
+            area_sqm: area,
+            strength: 100,
+          };
+        });
+        const pending: PendingRun = {
+          id: `pending_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
+          run: runData,
+          territories,
+          activityType: canClaimTerritory ? "territory_claimed" : "run_completed",
+          suggestedTitle,
+          suggestedDescription,
+        };
+        await addPendingRun(pending);
+        alert.show(strings.offline.savedOffline, strings.offline.savedOfflineMessage);
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : "Failed to save run locally";
+        alert.show("Error", message);
+      }
+      setSaving(false);
+      return;
+    }
+
     try {
-      const runData: RunInsert = {
-        user_id: user.id,
-        distance: totalDistance,
-        duration: elapsed,
-        avg_pace: avgSpeed > 0 ? 1000 / avgSpeed / 60 : null,
-        gps_points: points as unknown as RunInsert["gps_points"],
-        route_polyline: points.map((p) => [p.lat, p.lng]),
-        is_valid: validation.valid,
-        territory_claimed: false,
-        started_at: startTimeRef.current?.toISOString(),
-        finished_at: new Date().toISOString(),
-      };
       const { data: run, error: runError } = await supabase
         .from("runs")
         .insert(runData)
@@ -146,8 +199,6 @@ export default function RunScreen(): React.ReactElement {
         await supabase.from("profiles").update(updates).eq("user_id", user.id);
       }
 
-      let claimedAreaSqKm: number | null = null;
-      let territoryCount = 0;
       if (canClaimTerritory && run) {
         for (const polygon of loopPolygons) {
           const area = calculatePolygonArea(polygon);
@@ -162,8 +213,6 @@ export default function RunScreen(): React.ReactElement {
             created_from_run_id: run.id,
           };
           await supabase.from("territories").insert(territoryData);
-          territoryCount++;
-          claimedAreaSqKm = (claimedAreaSqKm ?? 0) + area / 1e6;
         }
         await supabase.from("runs").update({ territory_claimed: true }).eq("id", run.id);
       }
@@ -171,13 +220,6 @@ export default function RunScreen(): React.ReactElement {
       if (run) {
         const routePolyline = points.map((p) => [p.lat, p.lng] as [number, number]);
         const activityType = canClaimTerritory ? "territory_claimed" : "run_completed";
-        const suggestedTitle = canClaimTerritory ? "New Territory Claimed!" : "Run Completed";
-        const suggestedDescription =
-          canClaimTerritory && claimedAreaSqKm != null
-            ? territoryCount > 1
-              ? `Claimed ${territoryCount} territories (${claimedAreaSqKm.toFixed(3)} km²) · ${formatDistance(totalDistance)} run`
-              : `Claimed ${claimedAreaSqKm.toFixed(3)} km² with a ${formatDistance(totalDistance)} run`
-            : `${formatDistance(totalDistance)} in ${formatDuration(elapsed)}`;
         rootNav?.navigate("NameYourRun", {
           runId: run.id,
           routePolyline,
@@ -260,7 +302,12 @@ export default function RunScreen(): React.ReactElement {
           <BlurView intensity={70} tint="dark" style={styles.statCard}>
             <Gauge size={14} stroke={colors.mutedForeground} style={styles.statIcon} />
             <Text style={styles.statValue}>{formatPace(avgSpeed)}</Text>
-            <Text style={styles.statLabel}>Pace</Text>
+            <Text style={styles.statLabel}>Avg Pace</Text>
+          </BlurView>
+          <BlurView intensity={70} tint="dark" style={styles.statCard}>
+            <Mountain size={14} stroke={colors.mutedForeground} style={styles.statIcon} />
+            <Text style={styles.statValue}>{formatElevation(elevationGain)}</Text>
+            <Text style={styles.statLabel}>Elevation</Text>
           </BlurView>
           <BlurView intensity={70} tint="dark" style={styles.statCard}>
             <MapPin size={14} stroke={colors.mutedForeground} style={styles.statIcon} />
@@ -392,6 +439,7 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.lg,
     marginBottom: spacing["2xl"],
     justifyContent: "center",
