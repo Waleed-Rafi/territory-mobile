@@ -14,6 +14,12 @@ import { supabase } from "../supabase/client";
 import { useRunTracking } from "../hooks/useRunTracking";
 import { useOfflineSync } from "../hooks/useOfflineSync";
 import { addPendingRun, type PendingRun, type PendingTerritory } from "../utils/offlineQueue";
+import {
+  startRunLockScreen,
+  updateRunLockScreen,
+  stopRunLockScreen,
+  type RunLockScreenStats,
+} from "../utils/runLockScreen";
 import { Loader } from "../components/Loaders";
 import { cancelRunReminderFollowUp } from "../utils/runReminders";
 import {
@@ -33,6 +39,7 @@ import { colors, radius, spacing, typography } from "../theme";
 import { darkMapStyle } from "../theme/mapStyle";
 import { strings } from "../l10n/strings";
 import { BlurView } from "expo-blur";
+import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RunInsert, TerritoryInsert } from "../types/database";
@@ -50,9 +57,26 @@ export default function RunScreen(): React.ReactElement {
   const [saving, setSaving] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<Date | null>(null);
+  const lockScreenIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const statsRef = useRef<RunLockScreenStats>({
+    distanceMeters: 0,
+    durationSeconds: 0,
+    paceMps: 0,
+    elevationMeters: 0,
+    startDateMs: 0,
+  });
 
   const { isOnline } = useOfflineSync();
   const { tracking, points, currentPosition, error, startTracking, stopTracking } = useRunTracking();
+
+  useEffect(() => {
+    if (tracking) void activateKeepAwake("run");
+    else void deactivateKeepAwake("run");
+    return () => {
+      void deactivateKeepAwake("run");
+    };
+  }, [tracking]);
+
   const mapRef = useRef<MapView | null>(null);
   const totalDistance = calculateTotalDistance(points);
   const avgSpeed = elapsed > 0 ? totalDistance / elapsed : 0;
@@ -73,6 +97,36 @@ export default function RunScreen(): React.ReactElement {
     timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [tracking]);
+
+  statsRef.current = {
+    distanceMeters: totalDistance,
+    durationSeconds: elapsed,
+    paceMps: avgSpeed,
+    elevationMeters: elevationGain,
+    startDateMs: startTimeRef.current?.getTime() ?? 0,
+  };
+
+  useEffect(() => {
+    if (!tracking) return;
+    const startMs = startTimeRef.current?.getTime() ?? Date.now();
+    startRunLockScreen({
+      distanceMeters: 0,
+      durationSeconds: 0,
+      paceMps: 0,
+      elevationMeters: 0,
+      startDateMs: startMs,
+    });
+    lockScreenIntervalRef.current = setInterval(() => {
+      updateRunLockScreen(statsRef.current);
+    }, 5000);
+    return () => {
+      if (lockScreenIntervalRef.current) {
+        clearInterval(lockScreenIntervalRef.current);
+        lockScreenIntervalRef.current = null;
+      }
+      void stopRunLockScreen(statsRef.current);
     };
   }, [tracking]);
 

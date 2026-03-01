@@ -18,10 +18,12 @@ import { AuthProvider } from "./src/contexts/AuthContext";
 import { AlertProvider } from "./src/contexts/AlertContext";
 import RootNavigator from "./src/navigation/RootNavigator";
 import { setRunReminderNotificationHandler } from "./src/utils/runReminders";
+import { registerRunLockScreenService } from "./src/utils/runLockScreen";
 import { colors } from "./src/theme";
 
 SplashScreen.preventAutoHideAsync();
 setRunReminderNotificationHandler();
+registerRunLockScreenService();
 
 export default function App() {
   const [fontsLoaded] = useFonts({
