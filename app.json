@@ -4,7 +4,7 @@
     "slug": "territory",
     "version": "1.0.0",
     "orientation": "portrait",
-    "description": "Track runs, claim territory, and compete. Territory turns your running routes into claimable zones—run loops to capture areas, build your map, and challenge friends. Running app, GPS tracker, fitness.",
+    "description": "GPS run tracker & habit builder. Territory turns your running routes into claimable zones—run loops to capture areas, build your map, and challenge friends. Track runs, set weekly goals, streaks, and compete. Running app, fitness tracker, jogging, distance tracker.",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "scheme": "territory",

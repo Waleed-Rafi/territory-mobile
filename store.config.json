@@ -1,0 +1,18 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "categories": ["HEALTH_AND_FITNESS"],
+    "info": {
+      "en-US": {
+        "title": "Territory: GPS Run Tracker",
+        "subtitle": "Run. Claim. Defend Your Map.",
+        "description": "Territory is a GPS run tracker and fitness habit builder that gamifies your runs. Track runs, claim territory on the map, and compete with friends.\n\nRUN TRACKING\n• GPS run tracker with distance, pace, and route mapping\n• Jogging and running workout tracker\n• Personal records for 5K, 10K, half marathon and more\n\nTERRITORY & GAMIFICATION\n• Turn your running routes into claimable zones on the map\n• Run loops to capture and defend territory\n• Build your map and challenge friends\n• Leaderboard and competitive streaks\n\nHABIT BUILDING\n• Weekly run goals to stay motivated\n• Run reminders and streak tracker\n• Level up from Scout to Elite\n\nPrivacy-focused. No ads. Made for runners who want to run, claim, and defend.",
+        "keywords": ["fitness", "habit", "streak", "jogging", "distance", "workout", "leaderboard", "running", "5k", "10k", "marathon"],
+        "promoText": "GPS run tracker. Claim territory. Build habits. Compete with friends.",
+        "marketingUrl": "https://territoryy.netlify.app",
+        "supportUrl": "https://territoryy.netlify.app",
+        "privacyPolicyUrl": "https://territoryy.netlify.app/privacy"
+      }
+    }
+  }
+}

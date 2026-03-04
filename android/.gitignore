@@ -1,28 +1,16 @@
 # OSX
+#
 .DS_Store
 
 # Android/IntelliJ
+#
 build/
-.idea/
-.gradle/
+.idea
+.gradle
 local.properties
 *.iml
 *.hprof
 .cxx/
 
-# Keystore (don't commit signing keys)
-*.jks
-*.keystore
-key.properties
-
-# Build artifacts
-*.apk
-*.aab
-*.ap_
-*.dex
-
-# Bundle
+# Bundle artifacts
 *.jsbundle
-
-# External native build
-.externalNativeBuild/
