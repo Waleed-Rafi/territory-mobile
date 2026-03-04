@@ -10,16 +10,23 @@ export default ({ config }) => {
     ...config,
     expo: {
       ...expo,
+      name: "Territory",
+      slug: expo.slug ?? "territory",
       plugins,
       ios: {
+        ...ios,
         supportsTablet: ios.supportsTablet ?? true,
         bundleIdentifier: ios.bundleIdentifier ?? "com.territory.app",
-        infoPlist: ios.infoPlist ?? {},
-        ...ios,
+        icon: ios.icon ?? expo.icon ?? "./assets/icon.png",
+        infoPlist: {
+          ...(ios.infoPlist ?? {}),
+          CFBundleDisplayName: "Territory",
+        },
       },
       android: {
         ...android,
         package: android.package ?? "com.territory.app",
+        label: "Territory",
         config: android.config ?? {},
       },
     },

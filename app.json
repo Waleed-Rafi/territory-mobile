@@ -1,9 +1,10 @@
 {
   "expo": {
     "name": "Territory",
-    "slug": "territory-native",
+    "slug": "territory",
     "version": "1.0.0",
     "orientation": "portrait",
+    "description": "Track runs, claim territory, and compete. Territory turns your running routes into claimable zones—run loops to capture areas, build your map, and challenge friends. Running app, GPS tracker, fitness.",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "scheme": "territory",
@@ -15,7 +16,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.territory.app",
+      "icon": "./assets/icon.png",
       "infoPlist": {
+        "CFBundleDisplayName": "Territory",
         "NSLocationWhenInUseUsageDescription": "Territory needs location to track your runs and show the map.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Territory uses location to record your run and claim territory.",
         "NSPhotoLibraryAddUsageDescription": "Territory saves your activity share card to your photo library when you tap Save to photos."
@@ -27,6 +30,7 @@
         "backgroundColor": "#0f1729"
       },
       "package": "com.territory.app",
+      "label": "Territory",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
