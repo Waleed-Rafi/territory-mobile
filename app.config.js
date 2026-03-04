@@ -28,6 +28,7 @@ export default ({ config }) => {
         package: android.package ?? "com.territory.app",
         label: "Territory",
         config: android.config ?? {},
+        blockedPermissions: ["android.permission.RECORD_AUDIO"],
       },
     },
     extra: {
