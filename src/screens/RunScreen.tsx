@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Platform,
 } from "react-native";
-import MapView, { Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { Play, Square, MapPin, Ruler, Gauge, Mountain, AlertTriangle, CheckCircle } from "lucide-react-native";
 import { useAuth } from "../contexts/AuthContext";
 import { useAlert } from "../contexts/AlertContext";
@@ -36,7 +35,7 @@ import {
   formatElevation,
 } from "../lib/gps";
 import { colors, radius, spacing, typography } from "../theme";
-import { darkMapStyle } from "../theme/mapStyle";
+import { MapboxRunMap } from "../components/MapboxRunMap";
 import { strings } from "../l10n/strings";
 import { BlurView } from "expo-blur";
 import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
@@ -44,9 +43,6 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RunInsert, TerritoryInsert } from "../types/database";
 import type { RootStackParamList } from "../types/navigation";
-
-/** Fallback when no location/route yet – Pakistan center (matches MapScreen). */
-const FALLBACK_MAP_CENTER = { latitude: 33.6844, longitude: 73.0479 };
 
 export default function RunScreen(): React.ReactElement {
   const { user } = useAuth();
@@ -77,17 +73,16 @@ export default function RunScreen(): React.ReactElement {
     };
   }, [tracking]);
 
-  const mapRef = useRef<MapView | null>(null);
   const totalDistance = calculateTotalDistance(points);
   const avgSpeed = elapsed > 0 ? totalDistance / elapsed : 0;
   const elevationGain = calculateElevationGain(points);
   const closedLoop = points.length > 10 && isClosedLoop(points);
 
-  const routeCoordinates = points.map((p) => ({ latitude: p.lat, longitude: p.lng }));
+  const routePolyline = points.map((p) => [p.lat, p.lng] as [number, number]);
   const mapCenter = currentPosition
     ? { latitude: currentPosition.coords.latitude, longitude: currentPosition.coords.longitude }
-    : routeCoordinates.length > 0
-      ? { latitude: routeCoordinates[0].latitude, longitude: routeCoordinates[0].longitude }
+    : routePolyline.length > 0
+      ? { latitude: routePolyline[0][0], longitude: routePolyline[0][1] }
       : null;
 
   useEffect(() => {
@@ -130,24 +125,6 @@ export default function RunScreen(): React.ReactElement {
     };
   }, [tracking]);
 
-  useEffect(() => {
-    if (!tracking) return;
-    if (routeCoordinates.length === 1 && mapCenter) {
-      mapRef.current?.animateToRegion(
-        { ...mapCenter, latitudeDelta: 0.002, longitudeDelta: 0.002 },
-        350
-      );
-      return;
-    }
-    if (routeCoordinates.length < 2) return;
-    const coords = currentPosition
-      ? [...routeCoordinates, { latitude: currentPosition.coords.latitude, longitude: currentPosition.coords.longitude }]
-      : routeCoordinates;
-    mapRef.current?.fitToCoordinates(coords, {
-      edgePadding: { top: 48, right: 24, bottom: 24, left: 24 },
-      animated: true,
-    });
-  }, [tracking, routeCoordinates.length]);
 
   const handleStart = () => {
     const weekday = (new Date().getDay() - 1 + 7) % 7;
@@ -293,32 +270,12 @@ export default function RunScreen(): React.ReactElement {
   return (
     <View style={styles.container}>
       <View style={styles.mapContainer}>
-        <MapView
-          ref={mapRef}
-          style={StyleSheet.absoluteFill}
-          provider={PROVIDER_GOOGLE}
-          initialRegion={{
-            latitude: mapCenter?.latitude ?? FALLBACK_MAP_CENTER.latitude,
-            longitude: mapCenter?.longitude ?? FALLBACK_MAP_CENTER.longitude,
-            latitudeDelta: 0.003,
-            longitudeDelta: 0.003,
-          }}
-          showsUserLocation
-          showsMyLocationButton={false}
-          userInterfaceStyle="dark"
-          mapType="none"
-          customMapStyle={darkMapStyle}
-        >
-          {routeCoordinates.length >= 2 && (
-            <Polyline
-              coordinates={routeCoordinates}
-              strokeColor={colors.primary}
-              strokeWidth={4}
-              lineCap="round"
-              lineJoin="round"
-            />
-          )}
-        </MapView>
+        <MapboxRunMap
+          polyline={routePolyline}
+          userLocation={mapCenter}
+          tracking={tracking}
+          style={[StyleSheet.absoluteFill]}
+        />
         {!tracking && (
           <View style={styles.mapOverlay} pointerEvents="none">
             <Text style={styles.mapOverlayText}>{strings.run.startToTrack}</Text>

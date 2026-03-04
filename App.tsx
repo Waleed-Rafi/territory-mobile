@@ -1,4 +1,12 @@
 import React, { useCallback } from "react";
+import Constants from "expo-constants";
+
+if (Constants.appOwnership !== "expo") {
+  const mapboxToken = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN;
+  if (mapboxToken) {
+    require("@rnmapbox/maps").default.setAccessToken(mapboxToken);
+  }
+}
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";

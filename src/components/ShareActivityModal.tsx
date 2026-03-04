@@ -42,11 +42,7 @@ export function ShareActivityModal({
   const [busy, setBusy] = useState<"save" | "share" | null>(null);
 
   const run = activity.run;
-  const routeCoords = useMemo(
-    () =>
-      run?.route_polyline?.map(([lat, lng]) => ({ latitude: lat, longitude: lng })) ?? [],
-    [run?.route_polyline]
-  );
+  const routePolyline = run?.route_polyline ?? [];
   const mapRegion = useMemo(() => {
     if (!run?.route_polyline?.length) return null;
     const aspect = SHARE_CARD_WIDTH / 440;
@@ -155,7 +151,7 @@ export function ShareActivityModal({
             <ActivityShareCard
               activity={activity}
               mapRegion={mapRegion}
-              routeCoords={routeCoords}
+              routePolyline={routePolyline}
               paceMps={paceMps}
             />
           </View>

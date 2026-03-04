@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, useWindowDimensions } from "react-native";
-import MapView, { Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { Share2 } from "lucide-react-native";
 import { GlassCard } from "../components/GlassCard";
-import { darkMapStyle } from "../theme/mapStyle";
+import { MapboxRouteMap } from "../components/MapboxRouteMap";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuth } from "../contexts/AuthContext";
@@ -103,9 +102,7 @@ export default function ActivityScreen(): React.ReactElement {
           : run.distance / run.duration
         : 0;
     const hasRunStats = run && (run.distance > 0 || run.duration > 0);
-    const routeCoords =
-      run?.route_polyline?.length &&
-      run.route_polyline.map(([lat, lng]) => ({ latitude: lat, longitude: lng }));
+    const routePolyline = run?.route_polyline ?? [];
     const mapRegion = run?.route_polyline?.length ? polylineToMapRegion(run.route_polyline, MAP_FIT_TIGHT, mapAspect) : null;
 
     return (
@@ -169,24 +166,18 @@ export default function ActivityScreen(): React.ReactElement {
               ))}
             </View>
           ) : null}
-          {mapRegion && routeCoords && routeCoords.length > 0 ? (
+          {mapRegion && routePolyline.length > 0 ? (
             <View style={styles.mapSection}>
               <Text style={styles.mapLabel}>Route</Text>
               <View style={styles.mapWrap}>
-                <MapView
+                <MapboxRouteMap
+                  polyline={routePolyline}
+                  mapRegion={mapRegion}
+                  strokeWidth={3}
                   style={styles.miniMap}
-                  provider={PROVIDER_GOOGLE}
-                  initialRegion={mapRegion}
                   scrollEnabled={false}
                   zoomEnabled={false}
-                  pitchEnabled={false}
-                  pointerEvents="none"
-                  userInterfaceStyle="dark"
-                  mapType="none"
-                  customMapStyle={darkMapStyle}
-                >
-                  <Polyline coordinates={routeCoords} strokeColor={colors.primary} strokeWidth={3} />
-                </MapView>
+                />
               </View>
             </View>
           ) : null}

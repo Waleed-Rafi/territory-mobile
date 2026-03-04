@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { View, Text, StyleSheet, Platform, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import MapView, { Polygon, PROVIDER_GOOGLE } from "react-native-maps";
 import { BlurView } from "expo-blur";
 import * as Location from "expo-location";
 import { MapPin } from "lucide-react-native";
@@ -9,7 +8,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../supabase/client";
 import { Loader } from "../components/Loaders";
 import { colors, radius, spacing, typography } from "../theme";
-import { darkMapStyle } from "../theme/mapStyle";
+import { MapboxTerritoryMap, type TerritoryPolygon, type MapboxTerritoryMapRef } from "../components/MapboxTerritoryMap";
 import { strings } from "../l10n/strings";
 import type { TerritoryMapItem } from "../types/domain";
 import type { MapScreenNavigationProp } from "../types/navigation";
@@ -18,8 +17,6 @@ interface UserLocation {
   latitude: number;
   longitude: number;
 }
-
-const DEFAULT_REGION_DELTA = { latitudeDelta: 0.005, longitudeDelta: 0.005 };
 
 /** Fallback when location is unavailable (e.g. permission denied) – Pakistan center. */
 const FALLBACK_LOCATION: UserLocation = { latitude: 33.6844, longitude: 73.0479 };
@@ -109,7 +106,7 @@ async function fetchUserLocation(): Promise<UserLocation | null> {
 export default function MapScreen(): React.ReactElement {
   const { user } = useAuth();
   const navigation = useNavigation<MapScreenNavigationProp>();
-  const mapRef = useRef<MapView | null>(null);
+  const mapRef = useRef<MapboxTerritoryMapRef | null>(null);
   const [territories, setTerritories] = useState<TerritoryMapItem[]>([]);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
 
@@ -117,10 +114,7 @@ export default function MapScreen(): React.ReactElement {
     const loc = await fetchUserLocation();
     if (loc) {
       setUserLocation(loc);
-      mapRef.current?.animateToRegion({
-        ...loc,
-        ...DEFAULT_REGION_DELTA,
-      }, 500);
+      mapRef.current?.fitToUser(loc);
     }
   }, []);
 
@@ -134,17 +128,6 @@ export default function MapScreen(): React.ReactElement {
     return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => {
-    if (!userLocation) return;
-    const { latitude, longitude } = userLocation;
-    const region = { latitude, longitude, ...DEFAULT_REGION_DELTA };
-    const t = setTimeout(() => {
-      if (mapRef.current) {
-        mapRef.current.animateToRegion(region, 400);
-      }
-    }, 150);
-    return () => clearTimeout(t);
-  }, [userLocation?.latitude, userLocation?.longitude]);
 
   useEffect(() => {
     let cancelled = false;
@@ -203,39 +186,30 @@ export default function MapScreen(): React.ReactElement {
     );
   }
 
+  const territoryPolygons: TerritoryPolygon[] = territories
+    .filter((t) => t.polygon && t.polygon.length >= 2)
+    .map((t) => {
+      const isOwned = t.owner_id === user?.id;
+      const color = territoryColor(isOwned, t.strength);
+      return {
+        id: t.id,
+        polygon: t.polygon,
+        fillColor: color,
+        strokeColor: color,
+        strokeWidth: isOwned ? 2 : 1,
+      };
+    });
+
   return (
     <View style={styles.container}>
-      <MapView
+      <MapboxTerritoryMap
         ref={mapRef}
+        territories={territoryPolygons}
+        center={userLocation}
+        zoomLevel={14}
         style={StyleSheet.absoluteFill}
-        provider={PROVIDER_GOOGLE}
-        initialRegion={{
-          ...userLocation,
-          ...DEFAULT_REGION_DELTA,
-        }}
         showsUserLocation
-        showsMyLocationButton={false}
-        followsUserLocation={false}
-        userInterfaceStyle="dark"
-        mapType="none"
-        customMapStyle={darkMapStyle}
-      >
-        {territories.map((t) => {
-          const isOwned = t.owner_id === user?.id;
-          const color = territoryColor(isOwned, t.strength);
-          const coords = t.polygon.map(([lat, lng]) => ({ latitude: lat, longitude: lng }));
-          if (coords.length < 2) return null;
-          return (
-            <Polygon
-              key={t.id}
-              coordinates={coords}
-              fillColor={color + "40"}
-              strokeColor={color}
-              strokeWidth={isOwned ? 2 : 1}
-            />
-          );
-        })}
-      </MapView>
+      />
 
       <View style={styles.header} pointerEvents="box-none">
         <BlurView intensity={70} tint="dark" style={styles.glass}>

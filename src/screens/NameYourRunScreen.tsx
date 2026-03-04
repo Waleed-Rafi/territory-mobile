@@ -10,7 +10,6 @@ import {
   Platform,
   useWindowDimensions,
 } from "react-native";
-import MapView, { Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Camera, X } from "lucide-react-native";
@@ -20,7 +19,7 @@ import { useAlert } from "../contexts/AlertContext";
 import { supabase } from "../supabase/client";
 import { Loader } from "../components/Loaders";
 import { colors, radius, spacing, typography } from "../theme";
-import { darkMapStyle } from "../theme/mapStyle";
+import { MapboxRouteMap } from "../components/MapboxRouteMap";
 import { strings } from "../l10n/strings";
 import { polylineToMapRegion, MAP_FIT_TIGHT } from "../lib/gps";
 import type { RootStackParamList } from "../types/navigation";
@@ -53,11 +52,6 @@ export default function NameYourRunScreen(): React.ReactElement {
   const [saving, setSaving] = useState(false);
 
   const mapAspect = (width - 2 * spacing.lg) / NAME_RUN_MAP_HEIGHT;
-  const routeCoords = useMemo(
-    () =>
-      routePolyline.map(([lat, lng]) => ({ latitude: lat, longitude: lng })),
-    [routePolyline]
-  );
   const mapRegion = useMemo(
     () => polylineToMapRegion(routePolyline, MAP_FIT_TIGHT, mapAspect),
     [routePolyline, mapAspect]
@@ -218,19 +212,14 @@ export default function NameYourRunScreen(): React.ReactElement {
         <Text style={styles.label}>Route</Text>
         <View style={styles.mapWrap}>
           {mapRegion && (
-            <MapView
+            <MapboxRouteMap
+              polyline={routePolyline}
+              mapRegion={mapRegion}
+              strokeWidth={4}
               style={styles.map}
-              provider={PROVIDER_GOOGLE}
-              initialRegion={mapRegion}
               scrollEnabled={false}
               zoomEnabled={false}
-              pitchEnabled={false}
-              userInterfaceStyle="dark"
-              mapType="none"
-              customMapStyle={darkMapStyle}
-            >
-              <Polyline coordinates={routeCoords} strokeColor={colors.primary} strokeWidth={4} />
-            </MapView>
+            />
           )}
         </View>
 

@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { View, Text, StyleSheet, ScrollView, useWindowDimensions, TouchableOpacity, ActivityIndicator } from "react-native";
-import MapView, { Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { Share2, TrendingUp, Zap } from "lucide-react-native";
 import { GlassCard } from "../components/GlassCard";
-import { darkMapStyle } from "../theme/mapStyle";
+import { MapboxRouteMap } from "../components/MapboxRouteMap";
 import { useRoute, RouteProp } from "@react-navigation/native";
 import { colors, radius, spacing, typography } from "../theme";
 import { polylineToMapRegion, MAP_FIT_TIGHT, formatDistance, formatDuration, formatPace, formatElevation } from "../lib/gps";
@@ -44,9 +43,7 @@ export default function ActivityDetailScreen(): React.ReactElement {
   const [fullRun, setFullRun] = useState<FullRun | null>(null);
   const [loadingRun, setLoadingRun] = useState(!!activity.run_id);
 
-  const routeCoords =
-    run?.route_polyline?.length &&
-    run.route_polyline.map(([lat, lng]) => ({ latitude: lat, longitude: lng }));
+  const routePolyline = run?.route_polyline ?? [];
   const mapAspect = (width - 2 * spacing.lg) / DETAIL_MAP_HEIGHT;
   const mapRegion = run?.route_polyline?.length ? polylineToMapRegion(run.route_polyline, MAP_FIT_TIGHT, mapAspect) : null;
 
@@ -283,24 +280,18 @@ export default function ActivityDetailScreen(): React.ReactElement {
               </GlassCard>
             ) : null}
 
-            {mapRegion && routeCoords && routeCoords.length > 0 ? (
+            {mapRegion && routePolyline.length > 0 ? (
               <GlassCard style={styles.section}>
                 <Text style={styles.sectionLabel}>Route</Text>
                 <View style={styles.mapWrap}>
-                  <MapView
+                  <MapboxRouteMap
+                    polyline={routePolyline}
+                    mapRegion={mapRegion}
+                    strokeWidth={5}
                     style={styles.detailMap}
-                    provider={PROVIDER_GOOGLE}
-                    initialRegion={mapRegion}
                     scrollEnabled={false}
                     zoomEnabled={false}
-                    pitchEnabled={false}
-                    pointerEvents="none"
-                    userInterfaceStyle="dark"
-                    mapType="none"
-                    customMapStyle={darkMapStyle}
-                  >
-                    <Polyline coordinates={routeCoords} strokeColor={colors.primary} strokeWidth={5} lineCap="round" lineJoin="round" />
-                  </MapView>
+                  />
                 </View>
               </GlassCard>
             ) : null}

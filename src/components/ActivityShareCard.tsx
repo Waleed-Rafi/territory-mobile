@@ -5,9 +5,8 @@
 
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import MapView, { Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { colors, spacing, typography } from "../theme";
-import { darkMapStyle } from "../theme/mapStyle";
+import { MapboxRouteMap } from "./MapboxRouteMap";
 import { formatDistance, formatDuration, formatPace } from "../lib/gps";
 import type { MapRegion } from "../lib/gps";
 import type { ActivityDisplay } from "../types/domain";
@@ -21,14 +20,14 @@ const OVERLAY_HEIGHT = SHARE_CARD_HEIGHT - MAP_HEIGHT;
 export interface ActivityShareCardProps {
   activity: ActivityDisplay;
   mapRegion: MapRegion | null;
-  routeCoords: { latitude: number; longitude: number }[];
+  routePolyline: [number, number][];
   paceMps: number;
 }
 
 export function ActivityShareCard({
   activity,
   mapRegion,
-  routeCoords,
+  routePolyline,
   paceMps,
 }: ActivityShareCardProps): React.ReactElement {
   const run = activity.run;
@@ -36,26 +35,15 @@ export function ActivityShareCard({
 
   return (
     <View style={styles.card}>
-      {mapRegion && routeCoords.length > 0 ? (
-        <MapView
+      {mapRegion && routePolyline.length > 0 ? (
+        <MapboxRouteMap
+          polyline={routePolyline}
+          mapRegion={mapRegion}
+          strokeWidth={6}
           style={styles.map}
-          provider={PROVIDER_GOOGLE}
-          initialRegion={mapRegion}
           scrollEnabled={false}
           zoomEnabled={false}
-          pitchEnabled={false}
-          userInterfaceStyle="dark"
-          mapType="none"
-          customMapStyle={darkMapStyle}
-        >
-          <Polyline
-            coordinates={routeCoords}
-            strokeColor={colors.primary}
-            strokeWidth={6}
-            lineCap="round"
-            lineJoin="round"
-          />
-        </MapView>
+        />
       ) : (
         <View style={[styles.map, styles.mapPlaceholder]}>
           <Text style={styles.placeholderText}>No route</Text>

@@ -1,34 +1,26 @@
 // Load .env so EXPO_PUBLIC_* are available when config is evaluated
 require("dotenv").config({ path: ".env" });
 
-const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
-
 export default ({ config }) => {
   const expo = config?.expo ?? {};
   const ios = expo.ios ?? {};
   const android = expo.android ?? {};
+  const plugins = [...(expo.plugins ?? []).filter((p: unknown) => (Array.isArray(p) ? p[0] : p) !== "@rnmapbox/maps"), "@rnmapbox/maps"];
   return {
     ...config,
     expo: {
       ...expo,
+      plugins,
       ios: {
         supportsTablet: ios.supportsTablet ?? true,
         bundleIdentifier: ios.bundleIdentifier ?? "com.territory.app",
         infoPlist: ios.infoPlist ?? {},
-        ...(googleMapsApiKey && {
-          config: { googleMapsApiKey },
-        }),
         ...ios,
       },
       android: {
         ...android,
         package: android.package ?? "com.territory.app",
-        config: {
-          ...android.config,
-          ...(googleMapsApiKey && {
-            googleMaps: { apiKey: googleMapsApiKey },
-          }),
-        },
+        config: android.config ?? {},
       },
     },
     extra: {
