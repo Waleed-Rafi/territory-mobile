@@ -13,7 +13,9 @@ import { Loader } from "../components/Loaders";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import * as WebBrowser from "expo-web-browser";
+import { makeRedirectUri } from "expo-auth-session";
 import { supabase } from "../supabase/client";
+import { createSessionFromUrl } from "../utils/authCallback";
 import { useAlert } from "../contexts/AlertContext";
 import { colors, radius, spacing, typography } from "../theme";
 import { strings } from "../l10n/strings";
@@ -68,16 +70,24 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps): React.Re
 
   const handleGoogleSignIn = async (): Promise<void> => {
     try {
+      const redirectTo = makeRedirectUri({
+        scheme: "territory",
+        path: "auth/callback",
+      });
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: "territory://auth/callback",
+          redirectTo,
+          skipBrowserRedirect: true,
         },
       });
       if (error) throw error;
-      if (data?.url) {
-        const result = await WebBrowser.openBrowserAsync(data.url, { createTask: false });
-        if (result?.type === "dismiss") onAuthSuccess();
+      if (!data?.url) return;
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      if (result.type === "success" && result.url) {
+        await createSessionFromUrl(result.url);
+        show("Welcome back, runner!");
+        onAuthSuccess();
       }
     } catch (e: unknown) {
       show(e instanceof Error ? e.message : "Google sign-in failed", true);

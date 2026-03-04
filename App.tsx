@@ -23,6 +23,7 @@ import {
   JetBrainsMono_700Bold,
 } from "@expo-google-fonts/jetbrains-mono";
 import { AuthProvider } from "./src/contexts/AuthContext";
+import { AuthDeepLinkHandler } from "./src/components/AuthDeepLinkHandler";
 import { AlertProvider } from "./src/contexts/AlertContext";
 import RootNavigator from "./src/navigation/RootNavigator";
 import { setRunReminderNotificationHandler } from "./src/utils/runReminders";
@@ -60,6 +61,7 @@ export default function App() {
       <StatusBar style="light" />
       <NavigationContainer>
         <AuthProvider>
+          <AuthDeepLinkHandler />
           <AlertProvider>
             <RootNavigator />
           </AlertProvider>
