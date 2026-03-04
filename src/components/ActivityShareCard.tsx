@@ -4,8 +4,8 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet, Platform } from "react-native";
-import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
+import { View, Text, StyleSheet } from "react-native";
+import MapView, { Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { colors, spacing, typography } from "../theme";
 import { darkMapStyle } from "../theme/mapStyle";
 import { formatDistance, formatDuration, formatPace } from "../lib/gps";
@@ -39,14 +39,14 @@ export function ActivityShareCard({
       {mapRegion && routeCoords.length > 0 ? (
         <MapView
           style={styles.map}
-          provider={PROVIDER_DEFAULT}
+          provider={PROVIDER_GOOGLE}
           initialRegion={mapRegion}
           scrollEnabled={false}
           zoomEnabled={false}
           pitchEnabled={false}
           userInterfaceStyle="dark"
-          mapType={Platform.OS === "android" ? "none" : "mutedStandard"}
-          {...(Platform.OS === "android" && { customMapStyle: darkMapStyle })}
+          mapType="none"
+          customMapStyle={darkMapStyle}
         >
           <Polyline
             coordinates={routeCoords}

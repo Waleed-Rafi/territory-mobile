@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Platform,
 } from "react-native";
-import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
+import MapView, { Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { Play, Square, MapPin, Ruler, Gauge, Mountain, AlertTriangle, CheckCircle } from "lucide-react-native";
 import { useAuth } from "../contexts/AuthContext";
 import { useAlert } from "../contexts/AlertContext";
@@ -296,7 +296,7 @@ export default function RunScreen(): React.ReactElement {
         <MapView
           ref={mapRef}
           style={StyleSheet.absoluteFill}
-          provider={PROVIDER_DEFAULT}
+          provider={PROVIDER_GOOGLE}
           initialRegion={{
             latitude: mapCenter?.latitude ?? FALLBACK_MAP_CENTER.latitude,
             longitude: mapCenter?.longitude ?? FALLBACK_MAP_CENTER.longitude,
@@ -306,8 +306,8 @@ export default function RunScreen(): React.ReactElement {
           showsUserLocation
           showsMyLocationButton={false}
           userInterfaceStyle="dark"
-          mapType={Platform.OS === "android" ? "none" : "mutedStandard"}
-          {...(Platform.OS === "android" && { customMapStyle: darkMapStyle })}
+          mapType="none"
+          customMapStyle={darkMapStyle}
         >
           {routeCoordinates.length >= 2 && (
             <Polyline

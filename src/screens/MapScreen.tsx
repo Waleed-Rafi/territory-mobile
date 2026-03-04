@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { View, Text, StyleSheet, Platform, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import MapView, { Polygon, PROVIDER_DEFAULT } from "react-native-maps";
+import MapView, { Polygon, PROVIDER_GOOGLE } from "react-native-maps";
 import { BlurView } from "expo-blur";
 import * as Location from "expo-location";
 import { MapPin } from "lucide-react-native";
@@ -208,7 +208,7 @@ export default function MapScreen(): React.ReactElement {
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFill}
-        provider={PROVIDER_DEFAULT}
+        provider={PROVIDER_GOOGLE}
         initialRegion={{
           ...userLocation,
           ...DEFAULT_REGION_DELTA,
@@ -217,8 +217,8 @@ export default function MapScreen(): React.ReactElement {
         showsMyLocationButton={false}
         followsUserLocation={false}
         userInterfaceStyle="dark"
-        mapType={Platform.OS === "android" ? "none" : "mutedStandard"}
-        {...(Platform.OS === "android" && { customMapStyle: darkMapStyle })}
+        mapType="none"
+        customMapStyle={darkMapStyle}
       >
         {territories.map((t) => {
           const isOwned = t.owner_id === user?.id;

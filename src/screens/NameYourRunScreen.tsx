@@ -10,7 +10,7 @@ import {
   Platform,
   useWindowDimensions,
 } from "react-native";
-import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
+import MapView, { Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Camera, X } from "lucide-react-native";
@@ -220,14 +220,14 @@ export default function NameYourRunScreen(): React.ReactElement {
           {mapRegion && (
             <MapView
               style={styles.map}
-              provider={PROVIDER_DEFAULT}
+              provider={PROVIDER_GOOGLE}
               initialRegion={mapRegion}
               scrollEnabled={false}
               zoomEnabled={false}
               pitchEnabled={false}
               userInterfaceStyle="dark"
-              mapType={Platform.OS === "android" ? "none" : "mutedStandard"}
-              {...(Platform.OS === "android" && { customMapStyle: darkMapStyle })}
+              mapType="none"
+              customMapStyle={darkMapStyle}
             >
               <Polyline coordinates={routeCoords} strokeColor={colors.primary} strokeWidth={4} />
             </MapView>

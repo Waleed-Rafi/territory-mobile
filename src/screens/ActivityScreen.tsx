@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Platform, useWindowDimensions } from "react-native";
-import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, useWindowDimensions } from "react-native";
+import MapView, { Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { Share2 } from "lucide-react-native";
 import { GlassCard } from "../components/GlassCard";
 import { darkMapStyle } from "../theme/mapStyle";
@@ -175,15 +175,15 @@ export default function ActivityScreen(): React.ReactElement {
               <View style={styles.mapWrap}>
                 <MapView
                   style={styles.miniMap}
-                  provider={PROVIDER_DEFAULT}
+                  provider={PROVIDER_GOOGLE}
                   initialRegion={mapRegion}
                   scrollEnabled={false}
                   zoomEnabled={false}
                   pitchEnabled={false}
                   pointerEvents="none"
                   userInterfaceStyle="dark"
-                  mapType={Platform.OS === "android" ? "none" : "mutedStandard"}
-                  {...(Platform.OS === "android" && { customMapStyle: darkMapStyle })}
+                  mapType="none"
+                  customMapStyle={darkMapStyle}
                 >
                   <Polyline coordinates={routeCoords} strokeColor={colors.primary} strokeWidth={3} />
                 </MapView>

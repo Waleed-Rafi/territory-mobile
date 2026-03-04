@@ -15,6 +15,9 @@ export default ({ config }) => {
         supportsTablet: ios.supportsTablet ?? true,
         bundleIdentifier: ios.bundleIdentifier ?? "com.territory.app",
         infoPlist: ios.infoPlist ?? {},
+        ...(googleMapsApiKey && {
+          config: { googleMapsApiKey },
+        }),
         ...ios,
       },
       android: {
