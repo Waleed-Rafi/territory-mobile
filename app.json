@@ -2,7 +2,7 @@
   "expo": {
     "name": "Territory",
     "slug": "territory",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "description": "GPS run tracker & habit builder. Territory turns your running routes into claimable zones—run loops to capture areas, build your map, and challenge friends. Track runs, set weekly goals, streaks, and compete. Running app, fitness tracker, jogging, distance tracker.",
     "icon": "./assets/icon.png",
@@ -47,6 +47,13 @@
         }
       ],
       "expo-live-activity"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "14efef35-0809-45fc-8fa7-fd264ad2b9de"
+      },
+      "supabaseUrl": "https://dnifqijgkdfpiipibftt.supabase.co",
+      "supabaseAnonKey": "sb_publishable_Gt7HQ-PHWaNaeYCaAjmIdw_OWNb4Iul"
+    }
   }
 }
