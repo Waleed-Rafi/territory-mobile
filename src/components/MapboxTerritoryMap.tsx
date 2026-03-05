@@ -8,6 +8,7 @@ import React, { useMemo, useRef, forwardRef, useImperativeHandle } from "react";
 import { StyleSheet, type ViewStyle, type StyleProp } from "react-native";
 import { isMapboxAvailable } from "../lib/mapboxAvailable";
 import { MapPlaceholder } from "./MapPlaceholder";
+import { MapWithLayoutGuard } from "./MapWithLayoutGuard";
 import { polygonToGeoJSON, MAPBOX_DARK_STYLE } from "../lib/mapbox";
 
 export interface TerritoryPolygon {
@@ -79,12 +80,14 @@ const MapboxTerritoryMapInner = forwardRef<MapboxTerritoryMapRef, MapboxTerritor
     );
 
     return (
+      <MapWithLayoutGuard style={style}>
       <Mapbox.MapView
-        style={[styles.map, style]}
+        style={styles.map}
         styleURL={MAPBOX_DARK_STYLE}
         compassEnabled={false}
         logoEnabled={false}
         attributionEnabled={false}
+        scaleBarEnabled={false}
       >
         <Mapbox.Camera ref={cameraRef} defaultSettings={cameraConfig} />
         {showsUserLocation && <Mapbox.LocationPuck puckBearingEnabled={false} />}
@@ -113,6 +116,7 @@ const MapboxTerritoryMapInner = forwardRef<MapboxTerritoryMapRef, MapboxTerritor
           );
         })}
       </Mapbox.MapView>
+      </MapWithLayoutGuard>
     );
   }
 );

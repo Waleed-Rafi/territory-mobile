@@ -8,6 +8,7 @@ import React, { useMemo } from "react";
 import { StyleSheet, type ViewStyle, type StyleProp } from "react-native";
 import { isMapboxAvailable } from "../lib/mapboxAvailable";
 import { MapPlaceholder } from "./MapPlaceholder";
+import { MapWithLayoutGuard } from "./MapWithLayoutGuard";
 import { polylineToGeoJSON, mapRegionToBounds, mapRegionToCamera, MAPBOX_DARK_STYLE } from "../lib/mapbox";
 import type { MapRegion } from "../lib/gps";
 import { colors } from "../theme";
@@ -98,8 +99,9 @@ function MapboxRouteMapInner({
     : { centerCoordinate: cameraConfig.centerCoordinate, zoomLevel: cameraConfig.zoomLevel };
 
   return (
+    <MapWithLayoutGuard style={style}>
     <Mapbox.MapView
-      style={[styles.map, style]}
+      style={styles.map}
       styleURL={MAPBOX_DARK_STYLE}
       scrollEnabled={scrollEnabled}
       zoomEnabled={zoomEnabled}
@@ -108,6 +110,7 @@ function MapboxRouteMapInner({
       compassEnabled={false}
       logoEnabled={false}
       attributionEnabled={false}
+      scaleBarEnabled={false}
     >
       <Mapbox.Camera defaultSettings={defaultSettings} />
       <Mapbox.ShapeSource id="route" shape={lineGeoJSON}>
@@ -122,6 +125,7 @@ function MapboxRouteMapInner({
         />
       </Mapbox.ShapeSource>
     </Mapbox.MapView>
+    </MapWithLayoutGuard>
   );
 }
 

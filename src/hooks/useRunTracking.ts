@@ -23,35 +23,36 @@ export function useRunTracking(): RunTrackingState {
   const lastAddRef = useRef<number>(0);
 
   const startTracking = useCallback(async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") {
-      setError("Location permission denied");
-      return;
-    }
-    setPoints([]);
-    setError(null);
-    setTracking(true);
-
     try {
-      const initial = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.BestForNavigation,
-      });
-      setCurrentPosition(initial);
-      const firstPoint: GpsPoint = {
-        lat: initial.coords.latitude,
-        lng: initial.coords.longitude,
-        timestamp: initial.timestamp,
-        accuracy: initial.coords.accuracy ?? 0,
-        speed: initial.coords.speed ?? null,
-        altitude: initial.coords.altitude ?? null,
-      };
-      setPoints([firstPoint]);
-      lastAddRef.current = Date.now();
-    } catch {
-      // continue without initial point; watch will get first update
-    }
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setError("Location permission denied");
+        return;
+      }
+      setPoints([]);
+      setError(null);
+      setTracking(true);
 
-    subscriptionRef.current = await Location.watchPositionAsync(
+      try {
+        const initial = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.BestForNavigation,
+        });
+        setCurrentPosition(initial);
+        const firstPoint: GpsPoint = {
+          lat: initial.coords.latitude,
+          lng: initial.coords.longitude,
+          timestamp: initial.timestamp,
+          accuracy: initial.coords.accuracy ?? 0,
+          speed: initial.coords.speed ?? null,
+          altitude: initial.coords.altitude ?? null,
+        };
+        setPoints([firstPoint]);
+        lastAddRef.current = Date.now();
+      } catch {
+        // continue without initial point; watch will get first update
+      }
+
+      subscriptionRef.current = await Location.watchPositionAsync(
       {
         accuracy: Location.Accuracy.BestForNavigation,
         timeInterval: INTERVAL_MS,
@@ -76,6 +77,11 @@ export function useRunTracking(): RunTrackingState {
         });
       }
     );
+    } catch (e) {
+      setTracking(false);
+      const msg = e instanceof Error ? e.message : "Failed to start GPS";
+      setError(msg);
+    }
   }, []);
 
   const stopTracking = useCallback(() => {

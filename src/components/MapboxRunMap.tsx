@@ -8,6 +8,7 @@ import { StyleSheet, type ViewStyle, type StyleProp } from "react-native";
 import type { Camera } from "@rnmapbox/maps";
 import { isMapboxAvailable } from "../lib/mapboxAvailable";
 import { MapPlaceholder } from "./MapPlaceholder";
+import { MapWithLayoutGuard } from "./MapWithLayoutGuard";
 import { polylineToGeoJSON, MAPBOX_DARK_STYLE } from "../lib/mapbox";
 import { colors } from "../theme";
 
@@ -97,12 +98,14 @@ function MapboxRunMapInner({
   const hasRoute = lineGeoJSON != null;
 
   return (
+    <MapWithLayoutGuard style={style}>
     <Mapbox.MapView
-      style={[styles.map, style]}
+      style={styles.map}
       styleURL={MAPBOX_DARK_STYLE}
       compassEnabled={false}
       logoEnabled={false}
       attributionEnabled={false}
+      scaleBarEnabled={false}
     >
       <Mapbox.Camera
         ref={cameraRef}
@@ -126,6 +129,7 @@ function MapboxRunMapInner({
         </Mapbox.ShapeSource>
       )}
     </Mapbox.MapView>
+    </MapWithLayoutGuard>
   );
 }
 
